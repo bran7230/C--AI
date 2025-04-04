@@ -122,48 +122,95 @@ std::vector<std::vector<float>> matmul(const std::vector<std::vector<float>> &A,
             }
         }
     }
-    //if its not compatable, output error msg
+    // if its not compatable, output error msg
     else
     {
         std::cerr << "Matrixes are not compatable for multiplication." << std::endl;
     }
     return output;
 }
-//Print for matrixes
-void printMatrix(const std::vector<std::vector<float>>& matrix) {
-    //loops through rows
-    for (const auto& row : matrix) {
-        //goes through the values, and prints them
-        for (float val : row) {
+// Print for matrixes
+void printMatrix(const std::vector<std::vector<float>> &matrix)
+{
+    // loops through rows
+    for (const auto &row : matrix)
+    {
+        // goes through the values, and prints them
+        for (float val : row)
+        {
             std::cout << val << " ";
         }
         std::cout << std::endl;
     }
-
 }
-//example running of matrix multiply code:
+// example running of matrix multiply code:
 /*
      std::vector<std::vector<float>> A = {
         {1, 2, 3},
         {4, 5, 6}
     };
-    
+
     std::vector<std::vector<float>> B = {
         {7, 8},
         {9, 10},
         {11, 12}
     };
-    
+
     std::vector<std::vector<float>> result = matmul(A, B);
 
     printMatrix(result);
 
 */
 
+// Applies a linear layer: output = ReLU(input * weights + bias)
+std::vector<std::vector<float>> linear(const std::vector<std::vector<float>> &input, const std::vector<std::vector<float>> &weights, const std::vector<float> &bias)
+{
+    // Multiply input matrix by weights matrix
+    auto output = matmul(input, weights);
+
+    // Add bias to each element in the output's first row
+    for (int i = 0; i < output[0].size(); ++i)
+    { // Add bias to each element in the output's first row
+        output[0][i] += bias[i];
+    }
+    // Apply ReLU activation: set negative values to 0
+    for (int i = 0; i < output[0].size(); ++i)
+    {
+        if (output[0][i] < 0)
+            output[0][i] = 0;
+    }
+    return output;
+}
+
+// Example running:
+/*
+ std::vector<std::vector<float>> input = {
+        {1.0, 2.0, 3.0}
+    };
+
+    std::vector<std::vector<float>> weights = {
+        {0.1, 0.2},
+        {0.3, 0.4},
+        {0.5, 0.6}
+    };
+
+    std::vector<float> bias = {0.5, 1.0};
+
+    std::vector<std::vector<float>> result = linear(input, weights, bias);
+
+    // Print result
+    for (const auto& row : result) {
+        for (float val : row) {
+            std::cout << val << " ";
+        }
+        std::cout << std::endl;
+    }
+*/
+
 //===================================================END OF MATH=======================================================
 
 int main()
 {
-   
+
     return 0;
 }
