@@ -2,8 +2,9 @@
 #include <cmath>
 #include <vector>
 
-//Relu math:
-//I plan to upgrade this for Matrices in the Future.
+
+//TODO: upgrade this for Matrices in the Future.
+// Applies ReLU to a vector of floats. Returns a vector of activated values.
 std::vector<float> relu( const std::vector<float>& value) {
     //Example running:
     /*
