@@ -122,7 +122,7 @@ std::vector<std::vector<float>> matmul(const std::vector<std::vector<float>> &A,
             }
         }
     }
-
+    //if its not compatable, output error msg
     else
     {
         std::cerr << "Matrixes are not compatable for multiplication." << std::endl;
@@ -131,7 +131,9 @@ std::vector<std::vector<float>> matmul(const std::vector<std::vector<float>> &A,
 }
 //Print for matrixes
 void printMatrix(const std::vector<std::vector<float>>& matrix) {
+    //loops through rows
     for (const auto& row : matrix) {
+        //goes through the values, and prints them
         for (float val : row) {
             std::cout << val << " ";
         }
