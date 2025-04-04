@@ -95,11 +95,73 @@ for(auto &row : res){
     std::cout<<std::endl;
 }
 */
+
+// Matrix multiplication:
+std::vector<std::vector<float>> matmul(const std::vector<std::vector<float>> &A, const std::vector<std::vector<float>> &B)
+{
+    int aRows = A.size();    // number of rows in A
+    int aCols = A[0].size(); // number of columns in A
+    int bRows = B.size();    // number of rows in B
+    int bCols = B[0].size(); // number of columns in B
+
+    std::vector<std::vector<float>> output;
+    if (aCols == bRows)
+    {
+        // Initialize output matrix with correct size (aRows x bCols), filled with 0s
+        output = std::vector<std::vector<float>>(aRows, std::vector<float>(bCols, 0.0f));
+
+        // Loop through rows of A and columns of B
+        for (int i = 0; i < aRows; ++i)
+        {
+            for (int j = 0; j < bCols; ++j)
+            {
+                for (int k = 0; k < aCols; ++k)
+                {
+                    output[i][j] += A[i][k] * B[k][j];
+                }
+            }
+        }
+    }
+
+    else
+    {
+        std::cerr << "Matrixes are not compatable for multiplication." << std::endl;
+    }
+    return output;
+}
+//Print for matrixes
+void printMatrix(const std::vector<std::vector<float>>& matrix) {
+    for (const auto& row : matrix) {
+        for (float val : row) {
+            std::cout << val << " ";
+        }
+        std::cout << std::endl;
+    }
+
+}
+//example running of matrix multiply code:
+/*
+     std::vector<std::vector<float>> A = {
+        {1, 2, 3},
+        {4, 5, 6}
+    };
+    
+    std::vector<std::vector<float>> B = {
+        {7, 8},
+        {9, 10},
+        {11, 12}
+    };
+    
+    std::vector<std::vector<float>> result = matmul(A, B);
+
+    printMatrix(result);
+
+*/
+
 //===================================================END OF MATH=======================================================
 
 int main()
 {
-
-    
+   
     return 0;
 }
