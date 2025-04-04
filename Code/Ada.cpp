@@ -16,7 +16,7 @@ std::vector<float> relu(const std::vector<float> &input)
 
     return output;
 }
-// mad a matrix, loop through, apply relu and return final matrix
+// Matrix ReLU: Applies relu() to each row and returns the activated matrix
 std::vector<std::vector<float>> relu(const std::vector<std::vector<float>> &value)
 {
     // vectorize input or value:
@@ -100,5 +100,6 @@ for(auto &row : res){
 int main()
 {
 
+    
     return 0;
 }
