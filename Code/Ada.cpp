@@ -3,6 +3,7 @@
 #include <vector>
 
 //Relu math:
+//I plan to upgrade this for Matrices in the Future.
 std::vector<float> relu( const std::vector<float>& value) {
     //vectorize input or value:
     std::vector<float> output; 
