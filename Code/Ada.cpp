@@ -5,6 +5,18 @@
 //Relu math:
 //I plan to upgrade this for Matrices in the Future.
 std::vector<float> relu( const std::vector<float>& value) {
+    //Example running:
+    /*
+    std::vector<float> test = {1.0f};
+    std::vector<float> result = relu(test); 
+    for( float val :result)
+    {
+        std::cout << val << " ";
+        
+    }
+    std::cout<< "\nDone values." << std::endl;
+    */
+
     //vectorize input or value:
     std::vector<float> output; 
     //reserve memory or space for perfomance
@@ -22,23 +34,40 @@ std::vector<float> relu( const std::vector<float>& value) {
 }
 
 //Confidence or sigmoid function
-float sigmoid(float z){
+//Added vectors
+std::vector<float> sigmoid(const std::vector<float>& z){
+    //Example running:
+    /*
+    std::vector<float> testsig = {1.0f, 2.0f, -1.0f};
+    std::vector<float> resig = sigmoid(testsig);
+     for(float val: resig)
+    {
+        std::cout << val << " ";
+    }
+    */
+
     //Return Sigmoid function ( 1 / 1 + E ^-z)
-    return 1.0 / (1.0 + std::exp(-z));
+    std::vector<float> output;
+    output.reserve(z.size());
+
+    //Loop through values and add Sigmoid vals
+    for(float val : z){
+        output.push_back( 1 / (1 + (std::exp(-val))));
+    }
+    return output;
 }
 
 
 int main() {
     std::vector<float> test = {1.0f};
     std::vector<float> result = relu(test); 
-    
     for( float val :result)
     {
         std::cout << val << " ";
         
     }
     std::cout<< "\nDone values." << std::endl;
-    std::cout << sigmoid(2) << std::endl;
+   
     return 0;
 }
 
