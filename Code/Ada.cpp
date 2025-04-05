@@ -297,8 +297,44 @@ float cross_entropy(const std::vector<std::vector<float>> &batchProb, const std:
 
 // ========================================================================================END OF MATH FUNCTIONS=============================================================================
 
+// Webscraping:
+
+std::string fetch_url(const std::string &url)
+{
+    CURL *curl = curl_easy_init();
+    std::string response;
+
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+
+    CURLcode res = curl_easy_perform(curl);
+    curl_easy_cleanup(curl);
+
+    return response;
+}
+
+// This function is called by libcurl as soon as data is received
+size_t write_callback(void *contents, size_t size, size_t nmemb, void *userp)
+{
+    // Calculate the total size of the incoming data chunk
+    size_t totalSize = size * nmemb;
+
+    // Cast the user pointer back to a std::string*
+    std::string *response = static_cast<std::string *>(userp);
+
+    // Append the incoming data to the string
+    response->append(static_cast<char *>(contents), totalSize);
+
+    // Return the number of bytes handled (required by libcurl)
+    return totalSize;
+}
+
 int main()
 {
+
+    std::string html = fetch_url("https://example.com");
+std::cout << html << std::endl;
 
     return 0;
 }
