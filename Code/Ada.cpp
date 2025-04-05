@@ -257,6 +257,43 @@ std::cout << std::endl;
 
 */
 
+// Computes the cross-entropy loss between predicted probabilities and the correct class index
+float cross_entropy(const std::vector<float> &probs, int targetIndex)
+{
+    // Get the probability the model assigned to the correct class
+    float correctProb = probs[targetIndex];
+
+    // Compute the negative log of that probability
+    float loss = -std::log(correctProb);
+
+    return loss;
+}
+
+float cross_entropy(const std::vector<std::vector<float>> &batchProb, const std::vector<int> &targetIndices)
+{
+    float totalLoss = 0.0f;
+    for (int i = 0; i < batchProb.size(); i++)
+    {
+        totalLoss += cross_entropy(batchProb[i], targetIndices[i]);
+    }
+
+    return totalLoss / batchProb.size();
+}
+// example code for crossEntropy calc or Foward pass + loss system:
+/*
+
+    std::vector<std::vector<float>> batch = {
+        softmax({2.0f, 1.0f, 0.1f}),  // Should be confident in class 0
+        softmax({0.5f, 2.5f, 0.3f}),  // Should be confident in class 1
+        softmax({0.1f, 0.2f, 3.0f})   // Should be confident in class 2
+    };
+
+    std::vector<int> targets = {0, 1, 2};
+
+    float loss = cross_entropy(batch, targets);
+    std::cout << "Batch Cross-Entropy Loss: " << loss << std::endl;
+*/
+
 //===================================================END OF MATH=======================================================
 
 int main()
