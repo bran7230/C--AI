@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cmath>
 #include <vector>
+#include <curl/curl.h>
 
 // ==================================================================================MATH FUNCTIONS==========================================================================================
 // original relu to test and loop through rows.
