@@ -294,4 +294,65 @@ float cross_entropy(const std::vector<std::vector<float>> &batchProb, const std:
     std::cout << "Batch Cross-Entropy Loss: " << loss << std::endl;
 */
 
+std::vector<std::vector<float>> sigmoid_derivative(const std::vector<std::vector<float>> &activated)
+{
+    std::vector<std::vector<float>> output;
+
+    for (auto &row : activated)
+    {
+        std::vector<float> derivedrow;
+
+        for (float val : row)
+        {
+            derivedrow.push_back(val * (1.0f - val));
+        }
+        output.push_back(derivedrow);
+    }
+    return output;
+}
+// Example running:
+/*
+ //test set, 2 rows and cols
+    std::vector<std::vector<float>> test = {
+        {0.8f, 0.1f},
+        {0.5f, 0.9f}};
+    //result is passing through sigmoid function
+    std::vector<std::vector<float>> result = sigmoid_derivative(test);
+        //through rows
+    for (auto &row : result)
+    {   //results from rows
+        for (float val : row)
+        {   //print results
+            std::cout << val << " ";
+        }
+
+    }
+*/
+
+// Binary cross entropy loss:
+
+float binary_cross_entropy_batch(const std::vector<std::vector<float>> &predictions, const std::vector<int> &targets)
+{
+    float totalLoss = 0.0f;
+    for (int i = 0; i < predictions.size(); i++)
+    {
+        float p = predictions[i][0];
+        float y = targets[i];
+        totalLoss += -(y * std::log(p) + (1 - y) * std::log(1 - p));
+    }
+    return totalLoss / predictions.size();
+}
+
+// Example code run:
+/*
+ std::vector<std::vector<float>> predictions = {
+        {0.1f}, {0.9f}, {0.8f}, {0.2f}
+    };
+
+    std::vector<int> targets = {0, 1, 1, 0};
+
+    float loss = binary_cross_entropy_batch(predictions, targets);
+    std::cout << loss << std::endl;
+*/
+
 // ========================================================================================END OF MATH FUNCTIONS=============================================================================
