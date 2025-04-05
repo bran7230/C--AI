@@ -207,6 +207,56 @@ std::vector<std::vector<float>> linear(const std::vector<std::vector<float>> &in
     }
 */
 
+// Applies the Softmax function to a 1D vector of scores.
+// Converts raw values into a probability distribution that sums to 1.
+// Uses max-subtraction for numerical stability.
+std::vector<float> softmax(const std::vector<float> &input)
+{
+    // Find the maximum value in the input vector
+    //  (Used to stabilize the exponentials and prevent overflow)
+    float maxVal = input[0];
+    for (float val : input)
+    {
+        if (val > maxVal)
+            maxVal = val;
+    }
+
+    // Compute the exponentials of each input after subtracting the max
+    std::vector<float> exps(input.size());
+    for (int i = 0; i < input.size(); i++)
+    {
+        exps[i] = std::exp(input[i] - maxVal);
+    }
+
+    // Sum all exponentials
+    float sum = 0.0f;
+    for (float val : exps)
+    {
+        sum += val;
+    }
+
+    // Divide each exponential by the sum to get probabilities
+    std::vector<float> output(input.size());
+    for (int i = 0; i < input.size(); i++)
+    {
+        output[i] = exps[i] / sum;
+    }
+
+    return output;
+}
+
+// example running:
+/*
+std::vector<float> input = {2.0f, 1.0f, 0.1f};
+std::vector<float> output = softmax(input);
+
+for (float val : output) {
+    std::cout << val << " ";
+}
+std::cout << std::endl;
+
+*/
+
 //===================================================END OF MATH=======================================================
 
 int main()
