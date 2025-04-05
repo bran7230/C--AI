@@ -330,16 +330,19 @@ std::vector<std::vector<float>> sigmoid_derivative(const std::vector<std::vector
 */
 
 // Binary cross entropy loss:
-
+// Useful for 0s and 1s
 float binary_cross_entropy_batch(const std::vector<std::vector<float>> &predictions, const std::vector<int> &targets)
-{
+{ // total loss
     float totalLoss = 0.0f;
+    // go through predictions vectors, add predict as p[i] first val, then targets through the target vectors.
     for (int i = 0; i < predictions.size(); i++)
     {
         float p = predictions[i][0];
         float y = targets[i];
+        // add to total loss using loss formula : loss = -[y * log(p) + (1 - y) * log(1 - p)]
         totalLoss += -(y * std::log(p) + (1 - y) * std::log(1 - p));
     }
+    // finally return the loss
     return totalLoss / predictions.size();
 }
 
