@@ -14,7 +14,12 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     case WM_COMMAND:
     if (LOWORD(wParam) == 1) // Button ID
     {
-        MessageBox(hwnd, "Hi, I'm Ada. How can I help?", "Ada", MB_OK | MB_ICONINFORMATION);
+        char buffer[256];
+        GetWindowText(GetDlgItem(hwnd, 2), buffer, 256); // Read text from input box
+        std::string userInput = buffer;
+        std::string response = "You said: " + userInput;
+        MessageBox(hwnd, response.c_str(), "Ada Responds", MB_OK);
+       
     }
     break;
 }
@@ -29,7 +34,7 @@ void LaunchGui(HINSTANCE hInstance, int nCmdShow)
     wc.lpfnWndProc = WindowProc;
     wc.hInstance = hInstance;
     wc.lpszClassName = "Mainwin";
-    wc.hbrBackground = CreateSolidBrush(RGB(173, 216, 230));
+    wc.hbrBackground = CreateSolidBrush(RGB(34, 35, 37));
 
     RegisterClass(&wc);
 
@@ -46,9 +51,19 @@ void LaunchGui(HINSTANCE hInstance, int nCmdShow)
         "BUTTON", //class name
         "Ask Ada", // text
         WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
-        20, 20, 100, 30, // x, y, width, height
+        600, 400, 300, 30, // x, y, width, height
         hwnd, //parent window
         (HMENU)1, //control id for message handling
+        hInstance, NULL
+    );
+
+    HWND inputbox = CreateWindow(
+        "EDIT",
+        "",
+        WS_VISIBLE | WS_CHILD | WS_BORDER | ES_LEFT,
+        600, 350, 300, 25,         // x, y, width, height
+        hwnd,                    // Parent window
+        (HMENU)2,                // Control ID for this input
         hInstance, NULL
     );
 
