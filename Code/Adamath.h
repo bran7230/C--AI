@@ -2,8 +2,6 @@
 #include <cmath>
 #include <vector>
 
-
-
 //------------------------------------------
 // RELU MATH
 //------------------------------------------
@@ -406,5 +404,3 @@ float binary_cross_entropy_batch(const std::vector<std::vector<float>> &predicti
     float loss = binary_cross_entropy_batch(predictions, targets);
     std::cout << loss << std::endl;
 */
-
-
