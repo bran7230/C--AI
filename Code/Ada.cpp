@@ -13,8 +13,7 @@ int main()
 {
 
 
-    HINSTANCE hInstance = GetModuleHandle(NULL);
-    LaunchGui(hInstance, SW_SHOW);
+    
 
 
 

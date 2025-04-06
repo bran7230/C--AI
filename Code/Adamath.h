@@ -2,7 +2,12 @@
 #include <cmath>
 #include <vector>
 
-// ==================================================================================MATH FUNCTIONS==========================================================================================
+
+
+//------------------------------------------
+// RELU MATH
+//------------------------------------------
+
 // original relu to test and loop through rows.
 std::vector<float> relu(const std::vector<float> &input)
 {
@@ -50,6 +55,13 @@ for (const auto& row : result) {
     std::cout << std::endl;
 }
 */
+//------------------------------------------
+//  END OF RELU MATH
+//------------------------------------------
+
+//------------------------------------------
+// SIGMOID MATH
+//------------------------------------------
 
 // Confidence or sigmoid function
 // Added vectors
@@ -95,7 +107,13 @@ for(auto &row : res){
     std::cout<<std::endl;
 }
 */
+//-------------------------------------------------------
+//  END OF SIGMOID MATH
+//-------------------------------------------------------
 
+//-------------------------------------------------------
+// MATRIX MATH
+//-------------------------------------------------------
 // Matrix multiplication:
 std::vector<std::vector<float>> matmul(const std::vector<std::vector<float>> &A, const std::vector<std::vector<float>> &B)
 {
@@ -162,6 +180,13 @@ void printMatrix(const std::vector<std::vector<float>> &matrix)
 
 */
 
+//-------------------------------------------------
+// END OF MATRIX MATH
+//-------------------------------------------------
+
+//-------------------------------------------------
+// LINEAR MATH
+//-------------------------------------------------
 // Applies a linear layer: output = ReLU(input * weights + bias)
 std::vector<std::vector<float>> linear(const std::vector<std::vector<float>> &input, const std::vector<std::vector<float>> &weights, const std::vector<float> &bias)
 {
@@ -206,6 +231,13 @@ std::vector<std::vector<float>> linear(const std::vector<std::vector<float>> &in
         std::cout << std::endl;
     }
 */
+//----------------------------------------
+// END OF LINEAR MATH
+//----------------------------------------
+
+//---------------------------------------
+// SOFTMAX MATH
+//---------------------------------------
 
 // Applies the Softmax function to a 1D vector of scores.
 // Converts raw values into a probability distribution that sums to 1.
@@ -256,6 +288,14 @@ for (float val : output) {
 std::cout << std::endl;
 
 */
+
+//---------------------------------
+// END OF SOFTMAX MATH
+//---------------------------------
+
+//---------------------------------
+// CROSS ENTROPY MATH
+//---------------------------------
 
 // Computes the cross-entropy loss between predicted probabilities and the correct class index
 float cross_entropy(const std::vector<float> &probs, int targetIndex)
@@ -329,6 +369,9 @@ std::vector<std::vector<float>> sigmoid_derivative(const std::vector<std::vector
     }
 */
 
+//----------------------------------
+// BINARY CROSS ENTROPY MATH
+//----------------------------------
 // Binary cross entropy loss:
 // Useful for 0s and 1s
 float binary_cross_entropy_batch(const std::vector<std::vector<float>> &predictions, const std::vector<int> &targets)
@@ -358,4 +401,4 @@ float binary_cross_entropy_batch(const std::vector<std::vector<float>> &predicti
     std::cout << loss << std::endl;
 */
 
-// ========================================================================================END OF MATH FUNCTIONS=============================================================================
+

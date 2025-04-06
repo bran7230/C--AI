@@ -43,20 +43,21 @@ void LaunchGui(HINSTANCE hInstance, int nCmdShow)
         "Mainwin",
         "Test window",
         WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+        CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, 
         NULL, NULL, hInstance, NULL);
 
 
     HWND button = CreateWindow(
         "BUTTON", //class name
         "Ask Ada", // text
-        WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
+        WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON ,
         600, 400, 300, 30, // x, y, width, height
         hwnd, //parent window
         (HMENU)1, //control id for message handling
         hInstance, NULL
     );
 
+    
     HWND inputbox = CreateWindow(
         "EDIT",
         "",
