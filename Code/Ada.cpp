@@ -4,12 +4,15 @@
 #include "Adamath.cpp"
 #include "gui.cpp"
 #include <windows.h>
-
+//add when testing GUI
+/*
+HINSTANCE hInstance = GetModuleHandle(NULL);
+LaunchGui(hInstance, SW_SHOW);
+*/
 int main()
 { 
   
-    HINSTANCE hInstance = GetModuleHandle(NULL);
-    LaunchGui(hInstance, SW_SHOW);
+    
  
 
     return 0;
