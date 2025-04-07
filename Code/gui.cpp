@@ -26,6 +26,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
        
     }
     break;
+
     case WM_DROPFILES: {
         HDROP hDrop = (HDROP)wParam;
         char szFileName[MAX_PATH];
