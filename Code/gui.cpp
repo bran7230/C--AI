@@ -22,6 +22,16 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
        
     }
     break;
+    case WM_DROPFILES: {
+        HDROP hDrop = (HDROP)wParam;
+        char szFileName[MAX_PATH];
+        DragQueryFile(hDrop, 0, szFileName, MAX_PATH);
+        DragFinish(hDrop);
+    
+        // Set the dropped file name into the edit control
+        MessageBox(hwnd, szFileName, "Test", MB_OK);
+        break;
+    }
 }
 
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
@@ -42,15 +52,16 @@ void LaunchGui(HINSTANCE hInstance, int nCmdShow)
         0,
         "Mainwin",
         "Test window",
-        WS_OVERLAPPEDWINDOW,
+        WS_OVERLAPPEDWINDOW | WS_EX_ACCEPTFILES,
         CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, 
         NULL, NULL, hInstance, NULL);
 
+        DragAcceptFiles(hwnd, TRUE);
 
     HWND button = CreateWindow(
         "BUTTON", //class name
         "Ask Ada", // text
-        WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON ,
+        WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
         600, 400, 300, 30, // x, y, width, height
         hwnd, //parent window
         (HMENU)1, //control id for message handling
@@ -65,6 +76,16 @@ void LaunchGui(HINSTANCE hInstance, int nCmdShow)
         600, 350, 300, 25,         // x, y, width, height
         hwnd,                    // Parent window
         (HMENU)2,                // Control ID for this input
+        hInstance, NULL
+    );
+
+    HWND text = CreateWindow(
+        "EDIT",
+        "HELLO",
+        WS_VISIBLE | WS_CHILD |WS_BORDER | ES_LEFT,
+        200, 350, 300, 25,
+        hwnd,
+        (HMENU)3,
         hInstance, NULL
     );
 
