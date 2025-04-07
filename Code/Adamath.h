@@ -338,7 +338,7 @@ float cross_entropy(const std::vector<std::vector<float>> &batchProb, const std:
 //-------------------------------------
 //      SIGMOID DERIVATIVE MATH(BATCH)
 //-------------------------------------
-std::vector<std::vector<float>> sigmoid_derivative(const std::vector<std::vector<float>> &activated)
+std::vector<std::vector<float>> sigmoidDerivative(const std::vector<std::vector<float>> &activated)
 {
     std::vector<std::vector<float>> output;
 
