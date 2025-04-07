@@ -4,18 +4,21 @@
 #include "Adamath.h"
 #include "gui.cpp"
 #include <windows.h>
-//Use for gui tests
+#include <fstream>
+// Use for gui tests
 /*
 HINSTANCE hInstance = GetModuleHandle(NULL);
 LaunchGui(hInstance, SW_SHOW);
 */
+// Use for files:
+/*
+std::ofstream MyFile("Adacode.txt");
+    MyFile << "Test!" <<std::endl;
+
+    MyFile.close();
+*/
 int main()
 {
-
-
-    
-
-
-
+ 
     return 0;
 }
