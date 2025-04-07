@@ -2,9 +2,13 @@
 #include <cmath>
 #include <vector>
 #include <windows.h>
+#include <fstream>
+#include <sstream>      // for std::stringstream
+#include <string>       // for std::string
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+
     switch (uMsg)
     {
     case WM_DESTROY:
@@ -25,11 +29,21 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     case WM_DROPFILES: {
         HDROP hDrop = (HDROP)wParam;
         char szFileName[MAX_PATH];
+        
         DragQueryFile(hDrop, 0, szFileName, MAX_PATH);
         DragFinish(hDrop);
-    
-        // Set the dropped file name into the edit control
-        MessageBox(hwnd, szFileName, "Test", MB_OK);
+        std::ifstream file(szFileName);
+        if(!file.is_open())
+        {
+            MessageBox(hwnd, "Failed to open", "error", MB_OK | MB_ICONERROR);
+            break;
+        }
+
+        std::stringstream buffer;
+        buffer << file.rdbuf(); // read entire file
+        std::string content = buffer.str(); // now a string
+        file.close();
+
         break;
     }
 }

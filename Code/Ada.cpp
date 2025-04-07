@@ -19,9 +19,9 @@ std::ofstream MyFile("Adacode.txt");
 */
 int main()
 {
- 
-HINSTANCE hInstance = GetModuleHandle(NULL);
-LaunchGui(hInstance, SW_SHOW);
+    HINSTANCE hInstance = GetModuleHandle(NULL);
+    LaunchGui(hInstance, SW_SHOW);
+
 
     return 0;
 }
