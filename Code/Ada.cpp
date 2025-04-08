@@ -18,9 +18,8 @@ std::ofstream MyFile("Adacode.txt");
     MyFile.close();
 */
 int main()
-{
-    std::ofstream MyFile("Adacode.txt");
-    MyFile << "TEST";
+{   std::ofstream MyFile("Adacode.txt");
+    MyFile << "Test!" <<std::endl;
 
     MyFile.close();
     return 0;

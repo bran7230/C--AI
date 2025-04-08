@@ -361,7 +361,7 @@ std::vector<std::vector<float>> sigmoidDerivative(const std::vector<std::vector<
         {0.8f, 0.1f},
         {0.5f, 0.9f}};
     //result is passing through sigmoid function
-    std::vector<std::vector<float>> result = sigmoid_derivative(test);
+    std::vector<std::vector<float>> result = sigmoidDerivative(test);
         //through rows
     for (auto &row : result)
     {   //results from rows
