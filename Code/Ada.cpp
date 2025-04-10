@@ -2,12 +2,11 @@
 #include <cmath>
 #include <vector>
 #include "Adamath.h"
-#include "gui.cpp"
+#include <sstream> 
 #include <windows.h>
 #include <fstream>
 #include <string>
 #include <unordered_map>
-#include <cstdlib>
 
 // Use for gui tests
 /*
@@ -41,7 +40,7 @@ int main()
     buffer << file.rdbuf();
     std::string text = buffer.str();
     file.close();
-    
+
     int nextId = 0;
     std::vector<int> encodedText;
     for (char ch : text)
@@ -62,7 +61,7 @@ int main()
     }
 
     std::cout << "\nTraining Pairs:\n";
-    for (size_t i = 0; i < inputs.size(); i++)
+    for (size_t i = 0; i < inputs.size(); ++i)
     {
         std::cout << inputs[i] << " -> " << targets[i] << std::endl;
     }
