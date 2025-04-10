@@ -65,6 +65,9 @@ int main()
     {
         std::cout << inputs[i] << " -> " << targets[i] << std::endl;
     }
-
+    for(size_t i = 0; i <inputs.size(); i++)
+    {
+        std::cout << idtoChar[i];
+    }
     return 0;
 }
