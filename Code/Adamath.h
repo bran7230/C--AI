@@ -414,6 +414,18 @@ std::vector<float> computeGradient(const std::vector<float> &probs, int targetId
     dZ[targetId] -= 1.0f;          // Subtract 1 from the correct class
     return dZ;
 }
+/*
+//Future me, heres an example running:
+
+    std::vector<float> probs = {0.1, 0.7, 0.2};
+    int target = 1; 
+    std::vector<float> dz = computeGradient(probs, target);
+    for(float val : dz)
+    {
+        std::cout<<val <<std::endl;
+    }
+
+*/
 
 //============================================
 //      ONE-HOT INPUT TOKEN MATH
