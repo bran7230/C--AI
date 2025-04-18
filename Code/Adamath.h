@@ -53,9 +53,7 @@ for (const auto& row : result) {
     std::cout << std::endl;
 }
 */
-//------------------------------------------
-//  END OF RELU MATH
-//------------------------------------------
+
 
 //------------------------------------------
 // SIGMOID MATH
@@ -105,9 +103,7 @@ for(auto &row : res){
     std::cout<<std::endl;
 }
 */
-//-------------------------------------------------------
-//  END OF SIGMOID MATH
-//-------------------------------------------------------
+
 
 //-------------------------------------------------------
 // MATRIX MATH
@@ -178,9 +174,7 @@ void printMatrix(const std::vector<std::vector<float>> &matrix)
 
 */
 
-//-------------------------------------------------
-// END OF MATRIX MATH
-//-------------------------------------------------
+
 
 //-------------------------------------------------
 // LINEAR MATH
@@ -229,9 +223,7 @@ std::vector<std::vector<float>> linear(const std::vector<std::vector<float>> &in
         std::cout << std::endl;
     }
 */
-//----------------------------------------
-// END OF LINEAR MATH
-//----------------------------------------
+
 
 //---------------------------------------
 // SOFTMAX MATH
@@ -287,9 +279,7 @@ std::cout << std::endl;
 
 */
 
-//---------------------------------
-// END OF SOFTMAX MATH
-//---------------------------------
+
 
 //---------------------------------
 // CROSS ENTROPY MATH
@@ -331,9 +321,7 @@ float cross_entropy(const std::vector<std::vector<float>> &batchProb, const std:
     float loss = cross_entropy(batch, targets);
     std::cout << "Batch Cross-Entropy Loss: " << loss << std::endl;
 */
-//-------------------------------------
-//      END OF CROSS ENTROPY MATH
-//-------------------------------------
+
 
 //-------------------------------------
 //      SIGMOID DERIVATIVE MATH(BATCH)
@@ -373,9 +361,12 @@ std::vector<std::vector<float>> sigmoidDerivative(const std::vector<std::vector<
     }
 */
 
+
+
 //----------------------------------
 // BINARY CROSS ENTROPY MATH
 //----------------------------------
+
 // Binary cross entropy loss:
 // Useful for 0s and 1s
 float binary_cross_entropy_batch(const std::vector<std::vector<float>> &predictions, const std::vector<int> &targets)
@@ -404,3 +395,39 @@ float binary_cross_entropy_batch(const std::vector<std::vector<float>> &predicti
     float loss = binary_cross_entropy_batch(predictions, targets);
     std::cout << loss << std::endl;
 */
+
+//=====================================
+//      GRADIENT COMPUTATIONS
+//=====================================
+/*
+
+Gradient computations:
+
+A vector that tells how to change each logit
+
+Positive = increase prediction
+
+Negative = decrease
+
+Example:
+
+probs:      [0.1, 0.7, 0.2]
+target_id:  1
+
+dZ:         [0.1, -0.3, 0.2]
+
+It was too confident in 0.7, so it lowered the vectors number.
+*/
+std::vector<float> computeGradient(const std::vector<float>& probs, int targetId)
+{
+    std::vector<float> dZ = probs;  //copy the predicted prbabilities
+    dZ[targetId] -=1.0f;  //Subtract 1 from the correct class
+    return dZ; 
+
+}
+
+//============================================
+//      ONE-HOT INPUT TOKEN MATH
+//============================================
+
+
