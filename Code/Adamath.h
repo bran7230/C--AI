@@ -1,3 +1,4 @@
+#pragma once
 #include <iostream>
 #include <cmath>
 #include <vector>
@@ -418,7 +419,7 @@ std::vector<float> computeGradient(const std::vector<float> &probs, int targetId
 //Future me, heres an example running:
 
     std::vector<float> probs = {0.1, 0.7, 0.2};
-    int target = 1; 
+    int target = 1;
     std::vector<float> dz = computeGradient(probs, target);
     for(float val : dz)
     {
@@ -430,3 +431,59 @@ std::vector<float> computeGradient(const std::vector<float> &probs, int targetId
 //============================================
 //      ONE-HOT INPUT TOKEN MATH
 //============================================
+std::vector<float> oneHot(int vocabSize, int index)
+{
+    /*
+        We map the values, and only have the letter I decide to activate active.
+        then I set the actives letters index to 1 instead of default 0.
+        Then return it
+    */
+    std::vector<float> vec(vocabSize, 0.0f);
+    vec[index] = 1.0f;
+    return vec;
+}
+
+//=========================================
+//  COMPUTING DELTA WEIGHTS OR DW
+//=========================================
+
+std::vector<std::vector<float>> computeDW(const std::vector<float> &x, const std::vector<float> &dZ)
+{
+    int input_size = x.size();
+    int output_size = dZ.size();
+
+    std::vector<std::vector<float>> dW(input_size, std::vector<float>(output_size));
+
+    for (int i = 0; i < input_size; ++i)
+    {
+        for (int j = 0; j < output_size; ++j)
+        {
+            dW[i][j] = x[i] * dZ[j];
+        }
+    }
+
+    return dW;
+}
+/*
+    Example testing code for the matrixes
+
+    std::vector<float> input = {0.0f, 0.0f, 1.0f, 0.0f};
+
+    // Fake softmax gradient (output error dZ)
+    std::vector<float> dZ = {0.1f, -0.3f, 0.2f, 0.0f};
+
+    // Compute dW
+    std::vector<std::vector<float>> dW = computeDW(input, dZ);
+
+    //loop through rows
+    for(const auto& row: dW)
+    {
+    //display values in matrix format ie: 0 0 0 0
+                                          1 1 1 1
+        for(float val :row)
+        {
+            std::cout<<val<<"\t";
+        }
+        std::cout<<"\n";
+    }
+*/
