@@ -54,7 +54,6 @@ for (const auto& row : result) {
 }
 */
 
-
 //------------------------------------------
 // SIGMOID MATH
 //------------------------------------------
@@ -103,7 +102,6 @@ for(auto &row : res){
     std::cout<<std::endl;
 }
 */
-
 
 //-------------------------------------------------------
 // MATRIX MATH
@@ -174,8 +172,6 @@ void printMatrix(const std::vector<std::vector<float>> &matrix)
 
 */
 
-
-
 //-------------------------------------------------
 // LINEAR MATH
 //-------------------------------------------------
@@ -223,7 +219,6 @@ std::vector<std::vector<float>> linear(const std::vector<std::vector<float>> &in
         std::cout << std::endl;
     }
 */
-
 
 //---------------------------------------
 // SOFTMAX MATH
@@ -279,8 +274,6 @@ std::cout << std::endl;
 
 */
 
-
-
 //---------------------------------
 // CROSS ENTROPY MATH
 //---------------------------------
@@ -322,7 +315,6 @@ float cross_entropy(const std::vector<std::vector<float>> &batchProb, const std:
     std::cout << "Batch Cross-Entropy Loss: " << loss << std::endl;
 */
 
-
 //-------------------------------------
 //      SIGMOID DERIVATIVE MATH(BATCH)
 //-------------------------------------
@@ -360,8 +352,6 @@ std::vector<std::vector<float>> sigmoidDerivative(const std::vector<std::vector<
 
     }
 */
-
-
 
 //----------------------------------
 // BINARY CROSS ENTROPY MATH
@@ -418,16 +408,13 @@ dZ:         [0.1, -0.3, 0.2]
 
 It was too confident in 0.7, so it lowered the vectors number.
 */
-std::vector<float> computeGradient(const std::vector<float>& probs, int targetId)
+std::vector<float> computeGradient(const std::vector<float> &probs, int targetId)
 {
-    std::vector<float> dZ = probs;  //copy the predicted prbabilities
-    dZ[targetId] -=1.0f;  //Subtract 1 from the correct class
-    return dZ; 
-
+    std::vector<float> dZ = probs; // copy the predicted prbabilities
+    dZ[targetId] -= 1.0f;          // Subtract 1 from the correct class
+    return dZ;
 }
 
 //============================================
 //      ONE-HOT INPUT TOKEN MATH
 //============================================
-
-
