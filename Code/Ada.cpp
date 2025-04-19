@@ -3,56 +3,47 @@
 #include <vector>
 #include "Adamath.h"
 #include "AiComputations.h"
-#include <sstream> 
+#include <sstream>
 #include <fstream>
 #include <string>
 #include <unordered_map>
 
-
-
-
-
 int main()
 {
-    // Test weights
-    std::vector<std::vector<float>> weights = {
-        {0.5f, 0.3f, -0.2f},
-        {0.1f, -0.4f, 0.7f}
-    };
 
-    // Fake gradients (same shape as weights)
-    std::vector<std::vector<float>> dW = {
-        {0.1f, -0.2f, 0.05f},
-        {-0.3f, 0.1f, -0.15f}
-    };
-    // Default learning rate
-    float learningRate = 0.1f;
-   
-    std::cout << "Weights before update: " << std::endl;
-    for(const auto& row : weights)
+    std::vector<std::vector<float>> testMatrix = {
+        {-1.0f, 0.0f, 2.0f},
+        {3.5f, -0.5f, 1.0f}};
+
+    std::vector<std::vector<float>> result = relu(testMatrix);
+
+    std::vector<std::vector<float>> inputs = sigmoid(result);
+    std::vector<std::vector<float>> outputs;
+    std::vector<float> rowints;
+
+    for (const auto &vec : result)
     {
-        for(float val : row)
+        rowints.clear(); 
+        for (float x : vec)
         {
-            std::cout << val << "\t";
+            if (x > 0)
+                rowints.push_back(x);
         }
-        std::cout << std::endl;
+        outputs.push_back(rowints);
     }
 
-    std::cout << "\nAfter: " << std::endl;
-    updateWeights(weights, dW, learningRate);
-    for(const auto& row : weights)
+    std::vector<std::vector<float>> sigmoidOut; 
+    for (const auto &in : outputs)
     {
-        for(float val : row)
-        {
-            std::cout << val << "\t";
-        }
-        std::cout << std::endl;
+            sigmoidOut.push_back(sigmoid(in));   
     }
 
-    
-
-  
-
-    
+    for(const auto& val : sigmoidOut)
+    {
+        for(float res : val)
+        {
+            std::cout<<res << "\t";
+        }
+    }
     return 0;
 }

@@ -104,6 +104,55 @@ for(auto &row : res){
 }
 */
 
+/*
+    Example of "Overloading" the sigmoid function, using relu to clean the numbers, and then sigmoid the results, and leave said input.
+
+    //test values, relu will discard the -vals or vals==0
+    std::vector<std::vector<float>> testMatrix = {
+        {-1.0f, 0.0f, 2.0f},
+        {3.5f, -0.5f, 1.0f}};
+
+        //calling relu
+    std::vector<std::vector<float>> result = relu(testMatrix);
+
+    //inputs for the sigmoid or sigmoid matrix
+    std::vector<std::vector<float>> inputs = sigmoid(result);
+
+    //empty outs to loop through
+    std::vector<std::vector<float>> outputs;
+
+    //empty rows to append for my sigmoid call
+    std::vector<float> rowints;
+
+    for (const auto &vec : result)
+    {
+        rowints.clear(); //clear rows
+        for (float x : vec)
+        {
+            if (x > 0) //if their greater than 0 so no negative or 0 values
+                rowints.push_back(x);//add them
+        }
+        outputs.push_back(rowints); // append the rows to output vector
+    }
+
+    //empty sigmoid output 2d vector
+    std::vector<std::vector<float>> sigmoidOut;
+
+    //loop through said vector, add the sigmoided values back to empty vector
+    for (const auto &in : outputs)
+    {
+            sigmoidOut.push_back(sigmoid(in));
+    }
+    //printing vector, since its 2d we have to loop through cols, then items, and print said items. only 0.880797, 0.970688, 0.731059 get printed
+    //since only 3.5, 2.0, and 1.0 get passed from relu
+    for(const auto& val : sigmoidOut)
+    {
+        for(float res : val)
+        {
+            std::cout<<res << "\t";
+        }
+    }
+*/
 //-------------------------------------------------------
 // MATRIX MATH
 //-------------------------------------------------------
@@ -467,7 +516,7 @@ std::vector<std::vector<float>> computeDW(const std::vector<float> &x, const std
 /*
     Example testing code for the matrixes
 
-    std::vector<float> input = {0.0f, 0.0f, 1.0f, 0.0f};
+   std::vector<float> input = {0.0f, 0.0f, 1.0f, 0.0f};
 
     // Fake softmax gradient (output error dZ)
     std::vector<float> dZ = {0.1f, -0.3f, 0.2f, 0.0f};
@@ -479,7 +528,7 @@ std::vector<std::vector<float>> computeDW(const std::vector<float> &x, const std
     for(const auto& row: dW)
     {
     //display values in matrix format ie: 0 0 0 0
-                                          1 1 1 1
+    //                                    1 1 1 1
         for(float val :row)
         {
             std::cout<<val<<"\t";
