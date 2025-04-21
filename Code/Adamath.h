@@ -103,56 +103,6 @@ for(auto &row : res){
     std::cout<<std::endl;
 }
 */
-
-/*
-    Example of "Overloading" the sigmoid function, using relu to clean the numbers, and then sigmoid the results, and leave said input.
-
-    //test values, relu will discard the -vals or vals==0
-    std::vector<std::vector<float>> testMatrix = {
-        {-1.0f, 0.0f, 2.0f},
-        {3.5f, -0.5f, 1.0f}};
-
-    //calling relu
-    std::vector<std::vector<float>> result = relu(testMatrix);
-
-    //inputs for the sigmoid or sigmoid matrix
-    std::vector<std::vector<float>> inputs = sigmoid(result);
-
-    //empty outs to loop through
-    std::vector<std::vector<float>> outputs;
-
-    //empty rows to append for my sigmoid call
-    std::vector<float> rowints;
-
-    for (const auto &vec : result)
-    {
-        rowints.clear(); //clear rows
-        for (float x : vec)
-        {
-            if (x > 0) //if their greater than 0 so no negative or 0 values
-                rowints.push_back(x);//add them
-        }
-        outputs.push_back(rowints); // append the rows to output vector
-    }
-
-    //empty sigmoid output 2d vector
-    std::vector<std::vector<float>> sigmoidOut;
-
-    //loop through said vector, add the sigmoided values back to empty vector
-    for (const auto &in : outputs)
-    {
-            sigmoidOut.push_back(sigmoid(in));
-    }
-    //printing vector, since its 2d we have to loop through cols, then items, and print said items. only 0.880797, 0.970688, 0.731059 get printed
-    //since only 3.5, 2.0, and 1.0 get passed from relu
-    for(const auto& val : sigmoidOut)
-    {
-        for(float res : val)
-        {
-            std::cout<<res << "\t";
-        }
-    }
-*/
 //==============================
 //      MATRIX MATH
 //==============================
@@ -271,7 +221,7 @@ std::vector<std::vector<float>> linear(const std::vector<std::vector<float>> &in
 */
 
 //================================
-//     SOFTMAX MATH
+//     SOFTMAX MATH/SOFTMAX BATCH
 //================================
 
 // Applies the Softmax function to a 1D vector of scores.
@@ -312,15 +262,21 @@ std::vector<float> softmax(const std::vector<float> &input)
     return output;
 }
 
+//Batch math, apply softmax per row, for optimizations
+std::vector<std::vector<float>> softmaxBatch(const std::vector<std::vector<float>> &matrix)
+{
+    std::vector<std::vector<float>> output;
+    //reserve the size in memory
+    output.reserve(matrix.size());
+    //loop through each row
+    for (const auto &row : matrix)
+    {
+        output.push_back(softmax(row)); // apply softmax per row
+    }
+    return output;
+}
 // example running:
 /*
-std::vector<float> input = {2.0f, 1.0f, 0.1f};
-std::vector<float> output = softmax(input);
-
-for (float val : output) {
-    std::cout << val << " ";
-}
-std::cout << std::endl;
 
 */
 
