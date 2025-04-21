@@ -3,7 +3,7 @@
 This is a low-level C++ implementation of a neural network and transformer architecture built entirely from scratch. It focuses on learning, reasoning, and generating text without relying on machine learning libraries — enabling full control and deep understanding of how models like GPT function.
 
 ---
-
+# To build use g++ -O3 Code/Ada.cpp -o Ada.exe
 ## 🧠 Features (In Progress)
 
 ### ✅ Math Engine
