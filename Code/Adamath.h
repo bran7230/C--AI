@@ -11,43 +11,37 @@
 */
 // Print for matrixes
 // Its easier to do this than loop every time i test, just a simple printer.
-void printMatrix(const std::vector<std::vector<float>> &matrix)
-{
+void printMatrix(const std::vector<std::vector<float>> &matrix) {
     // loops through rows
-    for (const auto &row : matrix)
-    {
+    for(const auto &row : matrix) {
         // goes through the values, and prints them
-        for (float val : row)
-        {
+        for(float val : row) {
             std::cout << val << " ";
         }
         std::cout << std::endl;
     }
 }
 // original relu to test and loop through rows.
-std::vector<float> relu(const std::vector<float> &input)
-{
+std::vector<float> relu(const std::vector<float> &input) {
     std::vector<float> output;
     output.reserve(input.size());
 
-    for (float val : input)
-    {
+    for(float val : input) {
         output.push_back(val < 0.0f ? 0.0f : val);
     }
 
     return output;
 }
 // Matrix ReLU: Applies relu() to each row and returns the activated matrix
-std::vector<std::vector<float>> relu(const std::vector<std::vector<float>> &value)
-{
+std::vector<std::vector<float>> relu(const std::vector<std::vector<float>> &value) {
     // vectorize input or value:
     // reserve memory or space for perfomance
     std::vector<std::vector<float>> output(value.size());
 
     // loop through values(for matrixes ex 128 would be quicker than manual check)
-#pragma omp parallel for
-    for (int i = 0; i < value.size(); ++i)
-    {
+//optimize for parallel running:
+    #pragma omp parallel for
+    for(int i = 0; i < value.size(); ++i) {
         output[i] = relu(value[i]);
     }
 
@@ -73,27 +67,24 @@ std::vector<std::vector<float>> relu(const std::vector<std::vector<float>> &valu
 
 // Confidence or sigmoid function
 // Added vectors
-std::vector<float> sigmoid(const std::vector<float> &z)
-{
+std::vector<float> sigmoid(const std::vector<float> &z) {
 
     // Return Sigmoid function ( 1 / 1 + E ^-z)
     std::vector<float> output;
     output.reserve(z.size());
 
     // Loop through values and add Sigmoid vals
-    for (float val : z)
-    {
+    for(float val : z) {
         output.push_back(1 / (1 + (std::exp(-val))));
     }
     return output;
 }
 // sigmoid matrix, same thing as relu, loop through rows, apply sigmoid per row.
-std::vector<std::vector<float>> sigmoid(const std::vector<std::vector<float>> &matrix)
-{
+std::vector<std::vector<float>> sigmoid(const std::vector<std::vector<float>> &matrix) {
+    //declare a vector and save its size
     std::vector<std::vector<float>> output(matrix.size());
-#pragma omp parallel for
-    for (int i = 0; i < matrix.size(); ++i)
-    {
+    #pragma omp parallel for
+    for(int i = 0; i < matrix.size(); ++i) {
         output[i] = sigmoid(matrix[i]);
     }
 
@@ -114,34 +105,28 @@ std::vector<std::vector<float>> sigmoid(const std::vector<std::vector<float>> &m
 //      MATRIX MATH
 //==============================
 // Matrix multiplication:
-std::vector<std::vector<float>> matmul(const std::vector<std::vector<float>> &A, const std::vector<std::vector<float>> &B)
-{
+std::vector<std::vector<float>> matmul(const std::vector<std::vector<float>> &A, const std::vector<std::vector<float>> &B) {
     int aRows = A.size();    // number of rows in A
     int aCols = A[0].size(); // number of columns in A
     int bRows = B.size();    // number of rows in B
     int bCols = B[0].size(); // number of columns in B
 
     std::vector<std::vector<float>> output;
-    if (aCols == bRows)
-    {
+    if(aCols == bRows) {
         // Initialize output matrix with correct size (aRows x bCols), filled with 0s
         output = std::vector<std::vector<float>>(aRows, std::vector<float>(bCols, 0.0f));
-#pragma omp parallel for collapse(2) // Run the outer loops parrelel
+        #pragma omp parallel for collapse(2) // Run the outer loops parrelel
         // Loop through rows of A and columns of B
-        for (int i = 0; i < aRows; ++i)
-        {
-            for (int j = 0; j < bCols; ++j)
-            {
-                for (int k = 0; k < aCols; ++k)
-                {
+        for(int i = 0; i < aRows; ++i) {
+            for(int j = 0; j < bCols; ++j) {
+                for(int k = 0; k < aCols; ++k) {
                     output[i][j] += A[i][k] * B[k][j];
                 }
             }
         }
     }
     // if its not compatable, output error msg
-    else
-    {
+    else {
         std::cerr << "Matrixes are not compatable for multiplication." << std::endl;
     }
     return output;
@@ -169,20 +154,18 @@ std::vector<std::vector<float>> matmul(const std::vector<std::vector<float>> &A,
 //       LINEAR MATH
 //=============================
 // Applies a linear layer: output = ReLU(input * weights + bias)
-std::vector<std::vector<float>> linear(const std::vector<std::vector<float>> &input, const std::vector<std::vector<float>> &weights, const std::vector<float> &bias)
-{
+std::vector<std::vector<float>> linear(const std::vector<std::vector<float>> &input, const std::vector<std::vector<float>> &weights, const std::vector<float> &bias) {
     // Multiply input matrix by weights matrix
     auto output = matmul(input, weights);
 
     // Add bias to each element in the output's first row
-    for (int i = 0; i < output[0].size(); ++i)
-    { // Add bias to each element in the output's first row
+    for(int i = 0; i < output[0].size(); ++i) {
+        // Add bias to each element in the output's first row
         output[0][i] += bias[i];
     }
     // Apply ReLU activation: set negative values to 0
-    for (int i = 0; i < output[0].size(); ++i)
-    {
-        if (output[0][i] < 0)
+    for(int i = 0; i < output[0].size(); ++i) {
+        if(output[0][i] < 0)
             output[0][i] = 0;
     }
     return output;
@@ -216,35 +199,30 @@ std::vector<std::vector<float>> input = {
 // Applies the Softmax function to a 1D vector of scores.
 // Converts raw values into a probability distribution that sums to 1.
 // Uses max-subtraction for numerical stability.
-std::vector<float> softmax(const std::vector<float> &input)
-{
+std::vector<float> softmax(const std::vector<float> &input) {
     // Find the maximum value in the input vector
     //  (Used to stabilize the exponentials and prevent overflow)
     float maxVal = input[0];
-    for (float val : input)
-    {
-        if (val > maxVal)
+    for(float val : input) {
+        if(val > maxVal)
             maxVal = val;
     }
 
     // Compute the exponentials of each input after subtracting the max
     std::vector<float> exps(input.size());
-    for (int i = 0; i < input.size(); i++)
-    {
+    for(int i = 0; i < input.size(); i++) {
         exps[i] = std::exp(input[i] - maxVal);
     }
 
     // Sum all exponentials
     float sum = 0.0f;
-    for (float val : exps)
-    {
+    for(float val : exps) {
         sum += val;
     }
 
     // Divide each exponential by the sum to get probabilities
     std::vector<float> output(input.size());
-    for (int i = 0; i < input.size(); i++)
-    {
+    for(int i = 0; i < input.size(); i++) {
         output[i] = exps[i] / sum;
     }
 
@@ -252,13 +230,11 @@ std::vector<float> softmax(const std::vector<float> &input)
 }
 
 // Batch math, apply softmax per row, for optimizations
-std::vector<std::vector<float>> softmaxBatch(const std::vector<std::vector<float>> &matrix)
-{
+std::vector<std::vector<float>> softmaxBatch(const std::vector<std::vector<float>> &matrix) {
     std::vector<std::vector<float>> output(matrix.size());
 // loop through each row
-#pragma omp parallel for
-    for (int i = 0; i < matrix.size(); ++i)
-    {
+    #pragma omp parallel for
+    for(int i = 0; i < matrix.size(); ++i) {
         output[i] = softmax(matrix[i]);
     }
 
@@ -289,8 +265,7 @@ std::vector<std::vector<float>> softmaxBatch(const std::vector<std::vector<float
 //=================================
 
 // Computes the cross-entropy loss between predicted probabilities and the correct class index
-float cross_entropy(const std::vector<float> &probs, int targetIndex)
-{
+float cross_entropy(const std::vector<float> &probs, int targetIndex) {
     // Get the probability the model assigned to the correct class
     float correctProb = probs[targetIndex];
 
@@ -300,12 +275,10 @@ float cross_entropy(const std::vector<float> &probs, int targetIndex)
     return loss;
 }
 
-float cross_entropy(const std::vector<std::vector<float>> &batchProb, const std::vector<int> &targetIndices)
-{
+float cross_entropy(const std::vector<std::vector<float>> &batchProb, const std::vector<int> &targetIndices) {
     float totalLoss = 0.0f;
-#pragma omp parallel for reduction(+ : totalLoss)
-    for (int i = 0; i < batchProb.size(); i++)
-    {
+    #pragma omp parallel for reduction(+ : totalLoss)
+    for(int i = 0; i < batchProb.size(); i++) {
         totalLoss += cross_entropy(batchProb[i], targetIndices[i]);
     }
 
@@ -329,20 +302,17 @@ float cross_entropy(const std::vector<std::vector<float>> &batchProb, const std:
 //=====================================
 //    SIGMOID DERIVATIVE MATH(BATCH)
 //=====================================
-std::vector<std::vector<float>> sigmoidDerivative(const std::vector<std::vector<float>> &activated)
-{
+std::vector<std::vector<float>> sigmoidDerivative(const std::vector<std::vector<float>> &activated) {
     std::vector<std::vector<float>> output;
 
     output.resize(activated.size());
 
-#pragma omp parallel for
-    for (int i = 0; i < activated.size(); ++i)
-    {
+    #pragma omp parallel for
+    for(int i = 0; i < activated.size(); ++i) {
         const auto &row = activated[i];
         std::vector<float> derivedRow(row.size());
 
-        for (int j = 0; j < row.size(); ++j)
-        {
+        for(int j = 0; j < row.size(); ++j) {
             float val = row[j];
             derivedRow[j] = val * (1.0f - val);
         }
@@ -377,13 +347,12 @@ std::vector<std::vector<float>> sigmoidDerivative(const std::vector<std::vector<
 
 // Binary cross entropy loss:
 // Useful for 0s and 1s
-float binary_cross_entropy_batch(const std::vector<std::vector<float>> &predictions, const std::vector<int> &targets)
-{ // total loss
+float binary_cross_entropy_batch(const std::vector<std::vector<float>> &predictions, const std::vector<int> &targets) {
+    // total loss
     float totalLoss = 0.0f;
 // go through predictions vectors, add predict as p[i] first val, then targets through the target vectors.
-#pragma omp parallel for reduction(+ : totalLoss)
-    for (int i = 0; i < predictions.size(); ++i)
-    {
+    #pragma omp parallel for reduction(+ : totalLoss)
+    for(int i = 0; i < predictions.size(); ++i) {
         float p = predictions[i][0];
         float y = targets[i];
         totalLoss -= (y * std::log(p) + (1 - y) * std::log(1 - p));
@@ -427,8 +396,7 @@ dZ:         [0.1, -0.3, 0.2]
 
 It was too confident in 0.7, so it lowered the vectors number.
 */
-std::vector<float> computeGradient(const std::vector<float> &probs, int targetId)
-{
+std::vector<float> computeGradient(const std::vector<float> &probs, int targetId) {
     std::vector<float> dZ = probs; // copy the predicted prbabilities
     dZ[targetId] -= 1.0f;          // Subtract 1 from the correct class
     return dZ;
@@ -449,8 +417,7 @@ std::vector<float> computeGradient(const std::vector<float> &probs, int targetId
 //============================================
 //      ONE-HOT INPUT TOKEN MATH
 //============================================
-std::vector<float> oneHot(int vocabSize, int index)
-{
+std::vector<float> oneHot(int vocabSize, int index) {
     /*
         We map the values, and only have the letter I decide to activate active.
         then I set the actives letters index to 1 instead of default 0.
@@ -465,17 +432,14 @@ std::vector<float> oneHot(int vocabSize, int index)
 //  COMPUTING DELTA WEIGHTS OR DW
 //=========================================
 
-std::vector<std::vector<float>> computeDW(const std::vector<float> &x, const std::vector<float> &dZ)
-{
+std::vector<std::vector<float>> computeDW(const std::vector<float> &x, const std::vector<float> &dZ) {
     int input_size = x.size();
     int output_size = dZ.size();
 
     std::vector<std::vector<float>> dW(input_size, std::vector<float>(output_size));
 
-    for (int i = 0; i < input_size; ++i)
-    {
-        for (int j = 0; j < output_size; ++j)
-        {
+    for(int i = 0; i < input_size; ++i) {
+        for(int j = 0; j < output_size; ++j) {
             dW[i][j] = x[i] * dZ[j];
         }
     }
