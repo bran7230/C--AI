@@ -3,8 +3,6 @@
 #include <vector>
 #include "Adamath.h"
 #include "AiComputations.h"
-#include <chrono>
-#include <random>
 // DONT USE .h in COMPILE COMMAND
 //  use rm Ada.exe to remove original .exe file if present, or EXAMPLEFOLDER/Ada.exe
 // USE THIS SINCE IM USING OPENMP: g++ -fopenmp -O3 Code/Ada.cpp -o Ada.exe
