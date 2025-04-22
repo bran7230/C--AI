@@ -42,15 +42,14 @@ std::vector<float> relu(const std::vector<float> &input)
 std::vector<std::vector<float>> relu(const std::vector<std::vector<float>> &value)
 {
     // vectorize input or value:
-    std::vector<std::vector<float>> output;
     // reserve memory or space for perfomance
-    output.reserve(value.size());
+    std::vector<std::vector<float>> output(value.size());
 
     // loop through values(for matrixes ex 128 would be quicker than manual check)
-    for (auto &row : value)
+#pragma omp parallel for
+    for (int i = 0; i < value.size(); ++i)
     {
-        // If value is greater than 0, add to vector, else, return 0
-        output.push_back(relu(row));
+        output[i] = relu(value[i]);
     }
 
     return output;
@@ -92,13 +91,13 @@ std::vector<float> sigmoid(const std::vector<float> &z)
 // sigmoid matrix, same thing as relu, loop through rows, apply sigmoid per row.
 std::vector<std::vector<float>> sigmoid(const std::vector<std::vector<float>> &matrix)
 {
-    std::vector<std::vector<float>> output;
-    output.reserve(matrix.size());
-
-    for (auto &row : matrix)
+    std::vector<std::vector<float>> output(matrix.size());
+#pragma omp parallel for
+    for (int i = 0; i < matrix.size(); ++i)
     {
-        output.push_back(sigmoid(row));
+        output[i] = sigmoid(matrix[i]);
     }
+
     return output;
 }
 // example running for sigmoid:
@@ -128,7 +127,7 @@ std::vector<std::vector<float>> matmul(const std::vector<std::vector<float>> &A,
     {
         // Initialize output matrix with correct size (aRows x bCols), filled with 0s
         output = std::vector<std::vector<float>>(aRows, std::vector<float>(bCols, 0.0f));
-
+#pragma omp parallel for collapse(2) // Run the outer loops parrelel
         // Loop through rows of A and columns of B
         for (int i = 0; i < aRows; ++i)
         {
@@ -256,14 +255,14 @@ std::vector<float> softmax(const std::vector<float> &input)
 // Batch math, apply softmax per row, for optimizations
 std::vector<std::vector<float>> softmaxBatch(const std::vector<std::vector<float>> &matrix)
 {
-    std::vector<std::vector<float>> output;
-    // reserve the size in memory
-    output.reserve(matrix.size());
-    // loop through each row
-    for (const auto &row : matrix)
+    std::vector<std::vector<float>> output(matrix.size());
+// loop through each row
+#pragma omp parallel for
+    for (int i = 0; i < matrix.size(); ++i)
     {
-        output.push_back(softmax(row)); // apply softmax per row
+        output[i] = softmax(matrix[i]);
     }
+
     return output;
 }
 // example running:
@@ -305,6 +304,7 @@ float cross_entropy(const std::vector<float> &probs, int targetIndex)
 float cross_entropy(const std::vector<std::vector<float>> &batchProb, const std::vector<int> &targetIndices)
 {
     float totalLoss = 0.0f;
+#pragma omp parallel for reduction(+ : totalLoss)
     for (int i = 0; i < batchProb.size(); i++)
     {
         totalLoss += cross_entropy(batchProb[i], targetIndices[i]);
@@ -334,16 +334,23 @@ std::vector<std::vector<float>> sigmoidDerivative(const std::vector<std::vector<
 {
     std::vector<std::vector<float>> output;
 
-    for (auto &row : activated)
-    {
-        std::vector<float> derivedrow;
+    output.resize(activated.size());
 
-        for (float val : row)
+#pragma omp parallel for
+    for (int i = 0; i < activated.size(); ++i)
+    {
+        const auto &row = activated[i];
+        std::vector<float> derivedRow(row.size());
+
+        for (int j = 0; j < row.size(); ++j)
         {
-            derivedrow.push_back(val * (1.0f - val));
+            float val = row[j];
+            derivedRow[j] = val * (1.0f - val);
         }
-        output.push_back(derivedrow);
+
+        output[i] = derivedRow;
     }
+
     return output;
 }
 // Example running:
@@ -374,14 +381,15 @@ std::vector<std::vector<float>> sigmoidDerivative(const std::vector<std::vector<
 float binary_cross_entropy_batch(const std::vector<std::vector<float>> &predictions, const std::vector<int> &targets)
 { // total loss
     float totalLoss = 0.0f;
-    // go through predictions vectors, add predict as p[i] first val, then targets through the target vectors.
-    for (int i = 0; i < predictions.size(); i++)
+// go through predictions vectors, add predict as p[i] first val, then targets through the target vectors.
+#pragma omp parallel for reduction(+ : totalLoss)
+    for (int i = 0; i < predictions.size(); ++i)
     {
         float p = predictions[i][0];
         float y = targets[i];
-        // add to total loss using loss formula : loss = -[y * log(p) + (1 - y) * log(1 - p)]
         totalLoss -= (y * std::log(p) + (1 - y) * std::log(1 - p));
     }
+
     // finally return the loss
     return totalLoss / predictions.size();
 }
