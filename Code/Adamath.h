@@ -11,7 +11,7 @@
     WHEN YOU SEE printMatrix() IN EXAMPLE CODE ITS REFERING TO THIS BELOW:
 */
 // Print for matrixes
-//Its easier to do this than loop every time i test, just a simple printer.
+// Its easier to do this than loop every time i test, just a simple printer.
 void printMatrix(const std::vector<std::vector<float>> &matrix)
 {
     // loops through rows
@@ -61,9 +61,9 @@ std::vector<std::vector<float>> relu(const std::vector<std::vector<float>> &valu
         { -1.0f, 0.0f, 2.0f },
         { 3.5f, -0.5f, 1.0f }
     };
-    
+
     auto result = relu(testMatrix);
-    
+
     std::cout << "ReLU Output:\n";
     printMatrix(result);
         std::cout << std::endl;
@@ -107,10 +107,10 @@ std::vector<std::vector<float>> sigmoid(const std::vector<std::vector<float>> &m
         { -1.0f, 0.0f, 2.0f },
         { 3.5f, -0.5f, 1.0f }
     };
-    
+
     auto res = sigmoid(testMatrix);
     std::cout << "Sigmoid test:\n ";
-    printMatrix(res); 
+    printMatrix(res);
 */
 //==============================
 //      MATRIX MATH
@@ -208,7 +208,7 @@ std::vector<std::vector<float>> input = {
 
     // Print result
     printMatrix(result);
-    
+
 */
 
 //================================
@@ -253,13 +253,13 @@ std::vector<float> softmax(const std::vector<float> &input)
     return output;
 }
 
-//Batch math, apply softmax per row, for optimizations
+// Batch math, apply softmax per row, for optimizations
 std::vector<std::vector<float>> softmaxBatch(const std::vector<std::vector<float>> &matrix)
 {
     std::vector<std::vector<float>> output;
-    //reserve the size in memory
+    // reserve the size in memory
     output.reserve(matrix.size());
-    //loop through each row
+    // loop through each row
     for (const auto &row : matrix)
     {
         output.push_back(softmax(row)); // apply softmax per row
@@ -282,7 +282,7 @@ std::vector<std::vector<float>> softmaxBatch(const std::vector<std::vector<float
         {
             std::cout<<i << "\t";
         }
-        std::cout<<std::endl; 
+        std::cout<<std::endl;
     }
 */
 
@@ -479,13 +479,13 @@ std::vector<std::vector<float>> computeDW(const std::vector<float> &x, const std
    //Example testing code for the matrixes
 
     std::vector<float> input = {0.0f, 0.0f, 1.0f, 0.0f};
- 
+
      // Fake softmax gradient (output error dZ)
      std::vector<float> dZ = {0.1f, -0.3f, 0.2f, 0.0f};
- 
+
      // Compute dW
      auto dW = computeDW(input, dZ);
- 
+
      //loop through rows
      for(const auto& row: dW)
      {
