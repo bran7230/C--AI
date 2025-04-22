@@ -155,18 +155,18 @@ std::vector<std::vector<float>> matmul(const std::vector<std::vector<float>> &A,
 //=============================
 // Applies a linear layer: output = ReLU(input * weights + bias)
 std::vector<std::vector<float>> linear(const std::vector<std::vector<float>> &input, const std::vector<std::vector<float>> &weights, const std::vector<float> &bias) {
-    // Multiply input matrix by weights matrix
-    auto output = matmul(input, weights);
+   
+    auto output = matmul(input, weights); // [batch x output_dim]
+    int batch_size = output.size();
+    int output_dim = output[0].size();
 
-    // Add bias to each element in the output's first row
-    for(int i = 0; i < output[0].size(); ++i) {
-        // Add bias to each element in the output's first row
-        output[0][i] += bias[i];
-    }
-    // Apply ReLU activation: set negative values to 0
-    for(int i = 0; i < output[0].size(); ++i) {
-        if(output[0][i] < 0)
-            output[0][i] = 0;
+    #pragma omp parallel for collapse(2)
+    for(int i = 0; i < batch_size; ++i) {
+        for(int j = 0; j < output_dim; ++j) {
+            output[i][j] += bias[j]; // Add bias
+            if(output[i][j] < 0)      // Apply ReLU
+                output[i][j] = 0;
+        }
     }
     return output;
 }
