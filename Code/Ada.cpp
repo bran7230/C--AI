@@ -12,17 +12,7 @@
 //  then g++ -O3 Code/Ada.cpp -o Ada.exe
 int main()
 {
-    std::vector<std::vector<float>> output= {
-        {0.707, 0.707, 1.414}
-    };
-    auto result = softmaxBatch(output);
-
-    for(const auto& val : result)
-    {
-        for(auto& i : val)
-        {
-            std::cout<< i <<" ";
-        }
-    }
+    
+    
     return 0;
 }

@@ -39,20 +39,16 @@ std::vector<std::vector<float>> relu(const std::vector<std::vector<float>> &valu
 }
 // example running for relu:
 /*
-  std::vector<std::vector<float>> testMatrix = {
-    { -1.0f, 0.0f, 2.0f },
-    { 3.5f, -0.5f, 1.0f }
-};
-
-std::vector<std::vector<float>> result = relu(testMatrix);
-
-std::cout << "ReLU Output:\n";
-for (const auto& row : result) {
-    for (float val : row) {
-        std::cout << val << " ";
-    }
-    std::cout << std::endl;
-}
+ std::vector<std::vector<float>> testMatrix = {
+        { -1.0f, 0.0f, 2.0f },
+        { 3.5f, -0.5f, 1.0f }
+    };
+    
+    auto result = relu(testMatrix);
+    
+    std::cout << "ReLU Output:\n";
+    printMatrix(result);
+        std::cout << std::endl;
 */
 
 //==============================
@@ -89,19 +85,14 @@ std::vector<std::vector<float>> sigmoid(const std::vector<std::vector<float>> &m
 }
 // example running for sigmoid:
 /*
-  std::vector<std::vector<float>> testMatrix = {
-    { -1.0f, 0.0f, 2.0f },
-    { 3.5f, -0.5f, 1.0f }
-};
-
-std::vector<std::vector<float>> res = sigmoid(testMatrix);
-std::cout << "Sigmoid test:\n ";
-for(auto &row : res){
-    for(float val : row){
-        std::cout << val <<" ";
-    }
-    std::cout<<std::endl;
-}
+ std::vector<std::vector<float>> testMatrix = {
+        { -1.0f, 0.0f, 2.0f },
+        { 3.5f, -0.5f, 1.0f }
+    };
+    
+    auto res = sigmoid(testMatrix);
+    std::cout << "Sigmoid test:\n ";
+    printMatrix(res); 
 */
 //==============================
 //      MATRIX MATH
@@ -139,6 +130,7 @@ std::vector<std::vector<float>> matmul(const std::vector<std::vector<float>> &A,
     }
     return output;
 }
+//Trying something new:
 // Print for matrixes
 void printMatrix(const std::vector<std::vector<float>> &matrix)
 {
@@ -197,7 +189,7 @@ std::vector<std::vector<float>> linear(const std::vector<std::vector<float>> &in
 
 // Example running:
 /*
- std::vector<std::vector<float>> input = {
+std::vector<std::vector<float>> input = {
         {1.0, 2.0, 3.0}
     };
 
@@ -209,15 +201,11 @@ std::vector<std::vector<float>> linear(const std::vector<std::vector<float>> &in
 
     std::vector<float> bias = {0.5, 1.0};
 
-    std::vector<std::vector<float>> result = linear(input, weights, bias);
+    auto result = linear(input, weights, bias);
 
     // Print result
-    for (const auto& row : result) {
-        for (float val : row) {
-            std::cout << val << " ";
-        }
-        std::cout << std::endl;
-    }
+    printMatrix(result);
+    
 */
 
 //================================
@@ -277,7 +265,6 @@ std::vector<std::vector<float>> softmaxBatch(const std::vector<std::vector<float
 }
 // example running:
 /*
-
     //example rows
     std::vector<std::vector<float>> inputs = {
         {0.0f, 1.2f},
@@ -359,11 +346,11 @@ std::vector<std::vector<float>> sigmoidDerivative(const std::vector<std::vector<
 // Example running:
 /*
  //test set, 2 rows and cols
-    std::vector<std::vector<float>> test = {
+     std::vector<std::vector<float>> test = {
         {0.8f, 0.1f},
         {0.5f, 0.9f}};
     //result is passing through sigmoid function
-    std::vector<std::vector<float>> result = sigmoidDerivative(test);
+    auto result = sigmoidDerivative(test);
         //through rows
     for (auto &row : result)
     {   //results from rows
@@ -441,7 +428,7 @@ std::vector<float> computeGradient(const std::vector<float> &probs, int targetId
 
     std::vector<float> probs = {0.1, 0.7, 0.2};
     int target = 1;
-    std::vector<float> dz = computeGradient(probs, target);
+    auto dz = computeGradient(probs, target);
     for(float val : dz)
     {
         std::cout<<val <<std::endl;
@@ -486,25 +473,25 @@ std::vector<std::vector<float>> computeDW(const std::vector<float> &x, const std
     return dW;
 }
 /*
-    Example testing code for the matrixes
+   //Example testing code for the matrixes
 
-   std::vector<float> input = {0.0f, 0.0f, 1.0f, 0.0f};
-
-    // Fake softmax gradient (output error dZ)
-    std::vector<float> dZ = {0.1f, -0.3f, 0.2f, 0.0f};
-
-    // Compute dW
-    std::vector<std::vector<float>> dW = computeDW(input, dZ);
-
-    //loop through rows
-    for(const auto& row: dW)
-    {
-    //display values in matrix format ie: 0 0 0 0
-    //                                    1 1 1 1
-        for(float val :row)
-        {
-            std::cout<<val<<"\t";
-        }
-        std::cout<<"\n";
-    }
+    std::vector<float> input = {0.0f, 0.0f, 1.0f, 0.0f};
+ 
+     // Fake softmax gradient (output error dZ)
+     std::vector<float> dZ = {0.1f, -0.3f, 0.2f, 0.0f};
+ 
+     // Compute dW
+     auto dW = computeDW(input, dZ);
+ 
+     //loop through rows
+     for(const auto& row: dW)
+     {
+     //display values in matrix format ie: 0 0 0 0
+     //                                    1 1 1 1
+         for(float val :row)
+         {
+             std::cout<<val<<"\t";
+         }
+         std::cout<<"\n";
+     }
 */
