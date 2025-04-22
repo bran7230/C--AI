@@ -11,6 +11,7 @@
     WHEN YOU SEE printMatrix() IN EXAMPLE CODE ITS REFERING TO THIS BELOW:
 */
 // Print for matrixes
+//Its easier to do this than loop every time i test, just a simple printer.
 void printMatrix(const std::vector<std::vector<float>> &matrix)
 {
     // loops through rows
