@@ -30,7 +30,7 @@ This is a low-level, high-performance C++ implementation of a neural network and
 - Backprop-ready activation flows
 - Binary and categorical loss functions
 
-### ✅ Performance Benchmarks
+### ✅ Performance Benchmarks(Without cuda, will update when I implement cuda and benchmark it)
 - ReLU on 1M x 512 matrix in **~0.32s**
 - Softmax on 1M x 512 matrix in **~0.36s**
 - Matrix multiply (2048 x 2048) in **~1.17s** (OpenMP optimized)
