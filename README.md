@@ -1,53 +1,71 @@
 # C++ Neural Network & Transformer Engine (Scratch-Built AI)
 
-This is a low-level C++ implementation of a neural network and transformer architecture built entirely from scratch. It focuses on learning, reasoning, and generating text without relying on machine learning libraries — enabling full control and deep understanding of how models like GPT function.
+This is a low-level, high-performance C++ implementation of a neural network and transformer architecture built entirely from scratch. It focuses on learning, reasoning, and generating text without relying on ML libraries — enabling **full control and true understanding** of how models like GPT function.
 
 ---
 
-## 🧠 Features (In Progress)
+## 🧠 Features
 
-### ✅ Math Engine
-- Manual implementation of:
-  - ReLU activation (scalar & vectorized)
-  - Sigmoid activation (scalar)
-  - Softmax (vector)
-  - Matrix multiplication (`matmul`)
-  - Dot product (coming soon)
-  - Element-wise vector ops
+### ✅ Math Engine (Fully Manual, Optimized)
+- ReLU activation (scalar & matrix)
+- Sigmoid activation (scalar & matrix)
+- Softmax (scalar & batch)
+- Matrix multiplication (`matmul`)
+- Dot product (coming soon)
+- Element-wise ops
+- **OpenMP multithreading support for:**
+  - `matmul()`
+  - `relu()`
+  - `sigmoid(matrix)`
+  - `softmaxBatch()`
+  - `sigmoidDerivative()`
+  - `cross_entropy(batch)`
+  - `binary_cross_entropy(batch)`
 
-### ✅ Neural Network Foundation
-- Vector-based math operations
-- Full support for custom activation layers
-- Manual memory management & performance considerations
-- Focus on clean, modular, readable code
+### ✅ Neural Network Components
+- One-hot encoding
+- Gradient computation
+- Delta weight calculation (`computeDW`)
+- Manual memory layout for performance
+- Backprop-ready activation flows
+- Binary and categorical loss functions
 
-### ⚙️ Transformer Components (Planned)
-- Token embedding & vocabulary mapping
-- Positional encoding
-- Attention mechanism (self-attention)
-- Multi-head attention (optional)
+### ✅ Performance Benchmarks
+- ReLU on 1M x 512 matrix in **~0.32s**
+- Softmax on 1M x 512 matrix in **~0.36s**
+- Matrix multiply (2048 x 2048) in **~1.17s** (OpenMP optimized)
+
+---
+
+## ⚙️ Transformer Components (Planned)
+- Token embedding & vocab mapping
+- Positional encoding (sin/cos)
+- Attention mechanism (dot-product self-attention)
+- Multi-head attention
 - Layer normalization
-- Multi-token autoregressive generation
-- Training loop with backpropagation (manual)
+- Multi-token generation
+- Full forward/backward training loop
 
 ---
 
 ## 💡 Goals
 
 - Build a GPT-style AI model in **pure C++**
-- Learn how every part of a neural network works, from math to memory
-- Avoid black-box libraries — **understand everything**
-- Eventually port to raw C as a final performance challenge
-- Use this project as the foundation for an intelligent assistant with reasoning and learning capabilities
+- Achieve full transparency & control over all model components
+- Benchmark against existing models like GPT-2
+- Add **CUDA** acceleration for GPU compute
+- Eventually rewrite in raw **C** as the final optimization challenge
+- Use this as the foundation for "Ada" — a learning, reasoning AI assistant
 
 ---
 
 ## 🧱 Tech Stack
 
 - **C++17**
-- Standard Library only (no external ML libraries)
-- Optional: pybind11 (for Python interop, if needed later)
-- Optional: CUDA (for future GPU acceleration)
+- Standard Library only (no ML libs)
+- **OpenMP** (for CPU-level parallelism)
+- Optional: pybind11 (for Python interop)
+- Optional: **CUDA** (planned)
 
 ---
 
@@ -55,3 +73,4 @@ This is a low-level C++ implementation of a neural network and transformer archi
 
 ```bash
 g++ -fopenmp -O3 Code/Ada.cpp -o Ada.exe
+./Ada.exe
