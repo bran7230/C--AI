@@ -54,4 +54,4 @@ This is a low-level C++ implementation of a neural network and transformer archi
 ## 🛠️ How to Build & Run
 
 ```bash
-g++ -O3 Code/Ada.cpp -o Ada.exe
+g++ -fopenmp -O3 Code/Ada.cpp -o Ada.exe
