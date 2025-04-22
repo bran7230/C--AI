@@ -7,6 +7,23 @@
 //      RELU MATH
 //============================
 
+/*
+    WHEN YOU SEE printMatrix() IN EXAMPLE CODE ITS REFERING TO THIS BELOW:
+*/
+// Print for matrixes
+void printMatrix(const std::vector<std::vector<float>> &matrix)
+{
+    // loops through rows
+    for (const auto &row : matrix)
+    {
+        // goes through the values, and prints them
+        for (float val : row)
+        {
+            std::cout << val << " ";
+        }
+        std::cout << std::endl;
+    }
+}
 // original relu to test and loop through rows.
 std::vector<float> relu(const std::vector<float> &input)
 {
@@ -129,21 +146,6 @@ std::vector<std::vector<float>> matmul(const std::vector<std::vector<float>> &A,
         std::cerr << "Matrixes are not compatable for multiplication." << std::endl;
     }
     return output;
-}
-//Trying something new:
-// Print for matrixes
-void printMatrix(const std::vector<std::vector<float>> &matrix)
-{
-    // loops through rows
-    for (const auto &row : matrix)
-    {
-        // goes through the values, and prints them
-        for (float val : row)
-        {
-            std::cout << val << " ";
-        }
-        std::cout << std::endl;
-    }
 }
 // example running of matrix multiply code:
 /*
