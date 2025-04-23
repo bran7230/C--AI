@@ -197,7 +197,6 @@ std::vector<std::vector<float>> input = {
 //     SOFTMAX MATH/SOFTMAX BATCH
 //================================
 
-// Applies the Softmax function to a 1D vector of scores.
 // Converts raw values into a probability distribution that sums to 1.
 // Uses max-subtraction for numerical stability.
 std::vector<float> softmax(const std::vector<float> &input) {
