@@ -1,6 +1,9 @@
 #pragma once
 #include <cmath>
 #include <vector>
+#include <immintrin.h> // For SIMD intrinsics like _mm_max_ps, _mm_loadu_ps
+#include <numeric>  // for std::accumulate
+#include <algorithm>  // ← This is required for std::max_element
 
 //============================
 //      RELU MATH
@@ -24,36 +27,52 @@ void printMatrix(const std::vector<std::vector<float>> &matrix)
         std::cout << std::endl;
     }
 }
-// original relu to test and loop through rows.
-std::vector<float> relu(const std::vector<float> &input)
+// Applies ReLU activation using SIMD: output[i] = max(0, input[i])
+std::vector<float> reluSIMD(const std::vector<float> &input)
 {
-    std::vector<float> output;
-    output.reserve(input.size());
+    int size = input.size();
+    std::vector<float> output(size); // Allocate output vector
 
-    for (float val : input)
+    __m128 zero = _mm_setzero_ps(); // Load a SIMD vector of [0, 0, 0, 0]
+
+    int i = 0;
+
+    // Process 4 floats at a time using SSE intrinsics
+    for (; i <= size - 4; i += 4)
     {
-        output.push_back(val < 0.0f ? 0.0f : val);
+        // Load 4 consecutive floats from input (unaligned load)
+        __m128 in = _mm_loadu_ps(&input[i]);
+
+        // Apply ReLU: max(in, 0)
+        __m128 out = _mm_max_ps(in, zero);
+
+        // Store the result back to output vector (unaligned store)
+        _mm_storeu_ps(&output[i], out);
+    }
+
+    // Handle remaining values if size is not a multiple of 4
+    for (; i < size; ++i)
+    {
+        output[i] = std::max(0.0f, input[i]);
     }
 
     return output;
 }
-// Matrix ReLU: Applies relu() to each row and returns the activated matrix
+// Applies SIMD-accelerated ReLU row-by-row on a 2D matrix
 std::vector<std::vector<float>> relu(const std::vector<std::vector<float>> &value)
 {
-    // vectorize input or value:
-    // reserve memory or space for perfomance
     std::vector<std::vector<float>> output(value.size());
 
-// loop through values(for matrixes ex 128 would be quicker than manual check)
-// optimize for parallel running:
+    // Parallelize across rows
 #pragma omp parallel for
     for (int i = 0; i < value.size(); ++i)
     {
-        output[i] = relu(value[i]);
+        output[i] = reluSIMD(value[i]); // Use SIMD ReLU on each row
     }
 
     return output;
 }
+
 // example running for relu:
 /*
  std::vector<std::vector<float>> testMatrix = {
@@ -116,38 +135,84 @@ std::vector<std::vector<float>> sigmoidBatch(const std::vector<std::vector<float
 //      MATRIX MATH
 //==============================
 // Matrix multiplication:
-std::vector<std::vector<float>> matmul(const std::vector<std::vector<float>> &A, const std::vector<std::vector<float>> &B)
+// Transposes a 2D matrix (rows become columns)
+// Used to make matrix B cache-friendly for SIMD row-wise access
+std::vector<std::vector<float>> transpose(const std::vector<std::vector<float>> &matrix)
 {
-    int aRows = A.size();    // number of rows in A
-    int aCols = A[0].size(); // number of columns in A
-    int bRows = B.size();    // number of rows in B
-    int bCols = B[0].size(); // number of columns in B
+    int rows = matrix.size();
+    int cols = matrix[0].size();
 
-    std::vector<std::vector<float>> output;
-    if (aCols == bRows)
+    // Create transposed matrix: [cols x rows]
+    std::vector<std::vector<float>> transposed(cols, std::vector<float>(rows));
+
+    // Parallel transpose using OpenMP
+#pragma omp parallel for collapse(2)
+    for (int i = 0; i < rows; ++i)
+        for (int j = 0; j < cols; ++j)
+            transposed[j][i] = matrix[i][j];
+
+    return transposed;
+}
+
+// Computes the dot product between two float vectors using SIMD acceleration
+float dotSIMD(const std::vector<float> &a, const std::vector<float> &b)
+{
+    int size = a.size();
+    int i = 0;
+    float result = 0.0f;
+
+    __m128 sum = _mm_setzero_ps(); // Initialize SIMD register to [0, 0, 0, 0]
+
+    // Process 4 elements at a time using SSE instructions
+    for (; i <= size - 4; i += 4)
     {
-        // Initialize output matrix with correct size (aRows x bCols), filled with 0s
-        output = std::vector<std::vector<float>>(aRows, std::vector<float>(bCols, 0.0f));
-#pragma omp parallel for collapse(2) // Run the outer loops parrelel
-        // Loop through rows of A and columns of B
-        for (int i = 0; i < aRows; ++i)
+        __m128 va = _mm_loadu_ps(&a[i]);  // Load 4 floats from vector a
+        __m128 vb = _mm_loadu_ps(&b[i]);  // Load 4 floats from vector b
+        __m128 prod = _mm_mul_ps(va, vb); // Multiply element-wise
+        sum = _mm_add_ps(sum, prod);      // Accumulate the sum
+    }
+
+    // Horizontally add the 4 floats from the SIMD register
+    float temp[4];
+    _mm_storeu_ps(temp, sum);
+    result = temp[0] + temp[1] + temp[2] + temp[3];
+
+    // Handle leftover elements (if size isn't divisible by 4)
+    for (; i < size; ++i)
+        result += a[i] * b[i];
+
+    return result;
+}
+
+// Performs matrix multiplication: output = A × B
+// Uses transposed B for better memory access, and SIMD for faster inner loop
+std::vector<std::vector<float>> matmul(const std::vector<std::vector<float>> &A,
+                                       const std::vector<std::vector<float>> &B)
+{
+    int aRows = A.size();    // Rows in A
+    int aCols = A[0].size(); // Columns in A
+    int bCols = B[0].size(); // Columns in B
+
+    // Transpose B once so we can SIMD dot with its "columns"
+    auto B_T = transpose(B);
+
+    // Allocate result matrix: [aRows x bCols]
+    std::vector<std::vector<float>> output(aRows, std::vector<float>(bCols, 0.0f));
+
+// Parallel multiply: one thread per output[i][j]
+#pragma omp parallel for collapse(2)
+    for (int i = 0; i < aRows; ++i)
+    {
+        for (int j = 0; j < bCols; ++j)
         {
-            for (int j = 0; j < bCols; ++j)
-            {
-                for (int k = 0; k < aCols; ++k)
-                {
-                    output[i][j] += A[i][k] * B[k][j];
-                }
-            }
+            // Compute dot product between A[i] and transposed B[j]
+            output[i][j] = dotSIMD(A[i], B_T[j]);
         }
     }
-    // if its not compatable, output error msg
-    else
-    {
-        std::cerr << "Matrixes are not compatable for multiplication." << std::endl;
-    }
+
     return output;
 }
+
 // example running of matrix multiply code:
 /*
      std::vector<std::vector<float>> A = {
@@ -179,16 +244,14 @@ std::vector<std::vector<float>> linear(const std::vector<std::vector<float>> &in
     int batch_size = output.size();
     int output_dim = output[0].size();
 
-#pragma omp parallel for collapse(2)
+#pragma omp parallel for
     for (int i = 0; i < batch_size; ++i)
     {
         for (int j = 0; j < output_dim; ++j)
-        {
-            output[i][j] += bias[j]; // Add bias
-            if (output[i][j] < 0)    // Apply ReLU
-                output[i][j] = 0;
-        }
+            output[i][j] += bias[j];     // Add bias
+        output[i] = reluSIMD(output[i]); // Apply SIMD ReLU
     }
+
     return output;
 }
 
@@ -217,36 +280,27 @@ std::vector<std::vector<float>> input = {
 //     SOFTMAX MATH/SOFTMAX BATCH
 //================================
 
-// Converts raw values into a probability distribution that sums to 1.
-// Uses max-subtraction for numerical stability.
+// Converts a vector into a probability distribution using softmax (numerically stable)
 std::vector<float> softmax(const std::vector<float> &input)
 {
-    // Find the maximum value in the input vector
-    //  (Used to stabilize the exponentials and prevent overflow)
-    float maxVal = input[0];
-    for (float val : input)
-    {
-        if (val > maxVal)
-            maxVal = val;
-    }
+    int size = input.size();
+    std::vector<float> output(size);
 
-    // Compute the exponentials of each input after subtracting the max
-    std::vector<float> exps(input.size());
-    for (int i = 0; i < input.size(); i++)
+    // Step 1: Find the max value for numerical stability
+    float maxVal = *std::max_element(input.begin(), input.end());
+
+    // Step 2: Compute exponentials of (x - maxVal)
+    std::vector<float> exps(size);
+    for (int i = 0; i < size; ++i)
     {
         exps[i] = std::exp(input[i] - maxVal);
     }
 
-    // Sum all exponentials
-    float sum = 0.0f;
-    for (float val : exps)
-    {
-        sum += val;
-    }
+    // Step 3: Sum of exponentials
+    float sum = std::accumulate(exps.begin(), exps.end(), 0.0f);
 
-    // Divide each exponential by the sum to get probabilities
-    std::vector<float> output(input.size());
-    for (int i = 0; i < input.size(); i++)
+    // Step 4: Normalize
+    for (int i = 0; i < size; ++i)
     {
         output[i] = exps[i] / sum;
     }
@@ -254,13 +308,14 @@ std::vector<float> softmax(const std::vector<float> &input)
     return output;
 }
 
-// Batch math, apply softmax per row, for optimizations
+// Applies softmax row-wise on a batch matrix using OpenMP
 std::vector<std::vector<float>> softmaxBatch(const std::vector<std::vector<float>> &matrix)
 {
-    std::vector<std::vector<float>> output(matrix.size());
-    // loop through each row
-#pragma omp parallel for
-    for (int i = 0; i < matrix.size(); ++i)
+    int batchSize = matrix.size();
+    std::vector<std::vector<float>> output(batchSize);
+
+    #pragma omp parallel for
+    for (int i = 0; i < batchSize; ++i)
     {
         output[i] = softmax(matrix[i]);
     }
