@@ -39,7 +39,7 @@ std::vector<std::vector<float>> relu(const std::vector<std::vector<float>> &valu
     std::vector<std::vector<float>> output(value.size());
 
     // loop through values(for matrixes ex 128 would be quicker than manual check)
-//optimize for parallel running:
+    //optimize for parallel running:
     #pragma omp parallel for
     for(int i = 0; i < value.size(); ++i) {
         output[i] = relu(value[i]);
