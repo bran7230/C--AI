@@ -7,13 +7,8 @@
 //  use rm Ada.exe to remove original .exe file if present, or EXAMPLEFOLDER/Ada.exe
 // USE THIS SINCE IM USING OPENMP: g++ -fopenmp -O3 Code/main.cpp -o Ada.exe
 
-int main() {
-
-
-
-   
-    
-  
+int main()
+{
 
     return 0;
 }
