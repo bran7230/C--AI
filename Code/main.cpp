@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cmath>
 #include <vector>
+#include <string>
 #include "Adamath.h"
 #include "AiComputations.h"
 // DONT USE .h in COMPILE COMMAND
@@ -9,6 +10,7 @@
 
 int main()
 {
+    
 
     return 0;
 }
