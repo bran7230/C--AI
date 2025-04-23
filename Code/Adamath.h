@@ -80,7 +80,7 @@ std::vector<float> sigmoid(const std::vector<float> &z) {
     return output;
 }
 // sigmoid matrix, same thing as relu, loop through rows, apply sigmoid per row.
-std::vector<std::vector<float>> sigmoid(const std::vector<std::vector<float>> &matrix) {
+std::vector<std::vector<float>> sigmoidBatch(const std::vector<std::vector<float>> &matrix) {
     //declare a vector and save its size
     std::vector<std::vector<float>> output(matrix.size());
     #pragma omp parallel for
