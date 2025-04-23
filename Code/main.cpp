@@ -11,25 +11,26 @@
 // USE THIS SINCE IM USING OPENMP: g++ -fopenmp -O3 -march=native Code/main.cpp -o Ada.exe
 
 
-std::vector<std::vector<float>> generateLargeInput(int rows = 10000, int cols = 512) {
-    std::vector<std::vector<float>> data(rows, std::vector<float>(cols));
-    std::mt19937 rng(42);  // Seeded RNG
+std::vector<std::vector<float>> generateMatrix(int rows, int cols) {
+    std::vector<std::vector<float>> mat(rows, std::vector<float>(cols));
+    std::mt19937 rng(42);
     std::uniform_real_distribution<float> dist(0.0f, 1.0f);
-    for (auto &row : data)
-        for (auto &val : row)
+    for (auto& row : mat)
+        for (auto& val : row)
             val = dist(rng);
-    return data;
+    return mat;
 }
 int main()
 {
-    auto input = generateLargeInput();
+    auto A = generateMatrix(2048, 2048);
+    auto B = generateMatrix(2048, 2048);
 
     auto start = std::chrono::high_resolution_clock::now();
-    auto result = softmaxBatch(input);
+    auto result = matmul(A, B);
     auto end = std::chrono::high_resolution_clock::now();
 
     std::chrono::duration<double> elapsed = end - start;
-    std::cout << "C++ softmaxBatch time: " << elapsed.count() << " seconds\n";
+    std::cout << "C++ matmul time: " << elapsed.count() << " seconds\n";
 
     return 0;
 }
