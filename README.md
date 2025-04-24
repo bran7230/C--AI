@@ -82,5 +82,5 @@ g++ -fopenmp -O3 Code/Ada.cpp -o Ada.exe
 
 For CUDA:
 ```bash
-nvcc -O3 Code/main.cu -o Ada.exe
-./Ada.exe
+nvcc -O3 Code/main.cu -o ada.exe
+.\Ada.exe
