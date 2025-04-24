@@ -29,20 +29,21 @@ std::vector<std::vector<float>> generateMatrix(int rows, int cols) {
 
 int main()
 {
-    int size = 16384;  // You can scale this up for stress testing
+    const int size = 16384;
 
-    std::vector<std::vector<float>> A = generateMatrix(size, size);
-    std::vector<std::vector<float>> B = generateMatrix(size, size);
-    std::vector<std::vector<float>> output;
+    std::cout << "Benchmarking CPU matmul (" << size << "x" << size << ")...\n";
 
-    std::cout << "Benchmarking CUDA matmul (" << size << "x" << size << ")..." << std::endl;
+    // Create large input matrices
+    std::vector<std::vector<float>> A(size, std::vector<float>(size, 1.0f));
+    std::vector<std::vector<float>> B(size, std::vector<float>(size, 1.0f));
 
+    // Time the matrix multiplication
     auto start = std::chrono::high_resolution_clock::now();
-    output = matmulCUDA(A, B);  // Run CUDA accelerated version
+    auto result = matmul(A, B);
     auto end = std::chrono::high_resolution_clock::now();
 
     std::chrono::duration<float> duration = end - start;
-    std::cout << "CUDA matmul time: " << duration.count() << " seconds" << std::endl;
+    std::cout << "CPU matmul time: " << duration.count() << " seconds\n";
 
     return 0;
 }
