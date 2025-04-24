@@ -248,44 +248,67 @@ std::vector<std::vector<float>> matmul(const std::vector<std::vector<float>> &A,
 //      MATMUL CUDA VERSION
 //============================
 
-// CUDA Matrix Multiply (Tiled with Shared Memory)
+// Optimized CUDA Matmul Kernel with float4 loads + loop unrolling
 #define TILE_SIZE 32
 
-__global__ void matmul_shared_kernel(const float *A, const float *B, float *C, int M, int K, int N)
-{
+// CUDA kernel using shared memory and float4 vectorized loads for fast matrix multiplication
+__global__ void matmul_shared_float4_kernel(const float* __restrict__ A, const float* __restrict__ B, float* __restrict__ C, int M, int K, int N) {
+    // Shared memory tiles for A and B
     __shared__ float tileA[TILE_SIZE][TILE_SIZE];
     __shared__ float tileB[TILE_SIZE][TILE_SIZE];
 
-    int row = blockIdx.y * TILE_SIZE + threadIdx.y;
-    int col = blockIdx.x * TILE_SIZE + threadIdx.x;
+    // Calculate global row and column indices
+    const int row = blockIdx.y * TILE_SIZE + threadIdx.y;
+    const int col = blockIdx.x * TILE_SIZE + threadIdx.x;
 
-    float value = 0.0f;
+    float value = 0.0f; // Accumulator for dot product
 
-    for (int t = 0; t < (K + TILE_SIZE - 1) / TILE_SIZE; ++t)
-    {
-        // Load tiles into shared memory
-        if (row < M && t * TILE_SIZE + threadIdx.x < K)
-            tileA[threadIdx.y][threadIdx.x] = A[row * K + t * TILE_SIZE + threadIdx.x];
-        else
+    for (int t = 0; t < (K + TILE_SIZE - 1) / TILE_SIZE; ++t) {
+        // Load a TILE_SIZE x TILE_SIZE tile from A and B into shared memory using float4
+        int tiledRow = row;
+        int tiledCol = t * TILE_SIZE + threadIdx.x;
+        if (tiledRow < M && tiledCol + 3 < K) {
+            const float4* vecA = reinterpret_cast<const float4*>(&A[tiledRow * K + tiledCol]);
+            float4 loadA = *vecA;
+            tileA[threadIdx.y][threadIdx.x + 0] = loadA.x;
+            tileA[threadIdx.y][threadIdx.x + 1] = loadA.y;
+            tileA[threadIdx.y][threadIdx.x + 2] = loadA.z;
+            tileA[threadIdx.y][threadIdx.x + 3] = loadA.w;
+        } else {
             tileA[threadIdx.y][threadIdx.x] = 0.0f;
+        }
 
-        if (col < N && t * TILE_SIZE + threadIdx.y < K)
-            tileB[threadIdx.y][threadIdx.x] = B[(t * TILE_SIZE + threadIdx.y) * N + col];
-        else
+        tiledRow = t * TILE_SIZE + threadIdx.y;
+        tiledCol = col;
+        if (tiledRow + 3 < K && tiledCol < N) {
+            const float4* vecB = reinterpret_cast<const float4*>(&B[tiledRow * N + tiledCol]);
+            float4 loadB = *vecB;
+            tileB[threadIdx.y + 0][threadIdx.x] = loadB.x;
+            tileB[threadIdx.y + 1][threadIdx.x] = loadB.y;
+            tileB[threadIdx.y + 2][threadIdx.x] = loadB.z;
+            tileB[threadIdx.y + 3][threadIdx.x] = loadB.w;
+        } else {
             tileB[threadIdx.y][threadIdx.x] = 0.0f;
+        }
 
+        // Synchronize to ensure all threads have loaded their data
         __syncthreads();
 
-        // Multiply the two tiles
-        for (int k = 0; k < TILE_SIZE; ++k)
+        // Compute partial dot product using shared memory
+#pragma unroll
+        for (int k = 0; k < TILE_SIZE; ++k) {
             value += tileA[threadIdx.y][k] * tileB[k][threadIdx.x];
+        }
 
+        // Synchronize before loading new tiles
         __syncthreads();
     }
 
+    // Write result to global memory
     if (row < M && col < N)
         C[row * N + col] = value;
 }
+
 
 std::vector<std::vector<float>> matmulCUDA(const std::vector<std::vector<float>> &A,
                                            const std::vector<std::vector<float>> &B)
@@ -317,7 +340,7 @@ std::vector<std::vector<float>> matmulCUDA(const std::vector<std::vector<float>>
     // NEW (shared memory optimized)
     dim3 blockSize(TILE_SIZE, TILE_SIZE);
     dim3 gridSize((N + TILE_SIZE - 1) / TILE_SIZE, (M + TILE_SIZE - 1) / TILE_SIZE);
-    matmul_shared_kernel<<<gridSize, blockSize>>>(d_A, d_B, d_C, M, K, N);
+    matmul_shared_float4_kernel<<<gridSize, blockSize>>>(d_A, d_B, d_C, M, K, N);
     cudaDeviceSynchronize();
 
     cudaMemcpy(C_flat.data(), d_C, C_flat.size() * sizeof(float), cudaMemcpyDeviceToHost);
