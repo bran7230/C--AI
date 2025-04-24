@@ -4,9 +4,9 @@ This is a low-level, high-performance C++ implementation of a neural network and
 
 ---
 
-## 🧠 Features
+##  Features
 
-### ✅ Math Engine (Fully Manual, Optimized)
+###  Math Engine (Fully Manual, Optimized)
 - ReLU activation (scalar & matrix)
 - Sigmoid activation (scalar & matrix)
 - Softmax (scalar & batch)
@@ -22,7 +22,7 @@ This is a low-level, high-performance C++ implementation of a neural network and
   - `cross_entropy(batch)`
   - `binary_cross_entropy(batch)`
 
-### ✅ Neural Network Components
+###  Neural Network Components
 - One-hot encoding
 - Gradient computation
 - Delta weight calculation (`computeDW`)
@@ -30,14 +30,14 @@ This is a low-level, high-performance C++ implementation of a neural network and
 - Backprop-ready activation flows
 - Binary and categorical loss functions
 
-### ✅ Performance Benchmarks(Without cuda, will update when I implement cuda and benchmark it)
+###  Performance Benchmarks(Without cuda, will update when I implement cuda and benchmark it)
 - ReLU on 1M x 512 matrix in **~0.32s**
 - Softmax on 1M x 512 matrix in **~0.36s**
 - Matrix multiply (2048 x 2048) in **~1.17s** (OpenMP optimized)
 
 ---
 
-## ⚙️ Transformer Components (Planned)
+## ⚙️Transformer Components (Planned)
 - Token embedding & vocab mapping
 - Positional encoding (sin/cos)
 - Attention mechanism (dot-product self-attention)
@@ -48,7 +48,7 @@ This is a low-level, high-performance C++ implementation of a neural network and
 
 ---
 
-## 💡 Goals
+##  Goals
 
 - Build a GPT-style AI model in **pure C++**
 - Achieve full transparency & control over all model components
@@ -59,7 +59,7 @@ This is a low-level, high-performance C++ implementation of a neural network and
 
 ---
 
-## 🧱 Tech Stack
+##  Tech Stack
 
 - **C++17**
 - Standard Library only (no ML libs)
@@ -69,7 +69,7 @@ This is a low-level, high-performance C++ implementation of a neural network and
 
 ---
 
-## 🛠️ How to Build & Run
+##  How to Build & Run
 
 ```bash
 g++ -fopenmp -O3 Code/Ada.cpp -o Ada.exe
