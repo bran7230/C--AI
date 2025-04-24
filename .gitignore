@@ -1,0 +1,4 @@
+# Ignore executable
+Ada.exe
+ada.exp
+ada.lib
