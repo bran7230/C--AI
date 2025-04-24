@@ -37,7 +37,7 @@ This is a low-level, high-performance C++ implementation of a neural network and
 
 ---
 
-## ⚙️Transformer Components (Planned)
+## Transformer Components (Planned)
 - Token embedding & vocab mapping
 - Positional encoding (sin/cos)
 - Attention mechanism (dot-product self-attention)
