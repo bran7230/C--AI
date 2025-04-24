@@ -2,8 +2,8 @@
 #include <cmath>
 #include <vector>
 #include <immintrin.h> // For SIMD intrinsics like _mm_max_ps, _mm_loadu_ps
-#include <numeric>  // for std::accumulate
-#include <algorithm>  // ← This is required for std::max_element
+#include <numeric>     // for std::accumulate
+#include <algorithm>   // ← This is required for std::max_element
 
 //============================
 //      RELU MATH
@@ -314,7 +314,7 @@ std::vector<std::vector<float>> softmaxBatch(const std::vector<std::vector<float
     int batchSize = matrix.size();
     std::vector<std::vector<float>> output(batchSize);
 
-    #pragma omp parallel for
+#pragma omp parallel for
     for (int i = 0; i < batchSize; ++i)
     {
         output[i] = softmax(matrix[i]);
