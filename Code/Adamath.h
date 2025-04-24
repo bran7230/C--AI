@@ -27,64 +27,95 @@ void printMatrix(const std::vector<std::vector<float>> &matrix)
         std::cout << std::endl;
     }
 }
-// Applies ReLU activation using SIMD: output[i] = max(0, input[i])
-std::vector<float> reluSIMD(const std::vector<float> &input)
+__global__ void relu1d_kernel(float *input, float *output, int size)
 {
-    int size = input.size();
-    std::vector<float> output(size); // Allocate output vector
-
-    __m128 zero = _mm_setzero_ps(); // Load a SIMD vector of [0, 0, 0, 0]
-
-    int i = 0;
-
-    // Process 4 floats at a time using SSE intrinsics
-    for (; i <= size - 4; i += 4)
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < size)
     {
-        // Load 4 consecutive floats from input (unaligned load)
-        __m128 in = _mm_loadu_ps(&input[i]);
-
-        // Apply ReLU: max(in, 0)
-        __m128 out = _mm_max_ps(in, zero);
-
-        // Store the result back to output vector (unaligned store)
-        _mm_storeu_ps(&output[i], out);
+        output[idx] = fmaxf(0.0f, input[idx]);
     }
-
-    // Handle remaining values if size is not a multiple of 4
-    for (; i < size; ++i)
-    {
-        output[i] = std::max(0.0f, input[i]);
-    }
-
-    return output;
 }
-// Applies SIMD-accelerated ReLU row-by-row on a 2D matrix
-std::vector<std::vector<float>> relu(const std::vector<std::vector<float>> &value)
+void reluCUDA1D(const std::vector<float> &inputVec, std::vector<float> &outputVec)
 {
-    std::vector<std::vector<float>> output(value.size());
+    int size = inputVec.size();
+    float *d_input, *d_output;
 
-    // Parallelize across rows
-#pragma omp parallel for
-    for (int i = 0; i < value.size(); ++i)
+    cudaMalloc(&d_input, size * sizeof(float));
+    cudaMalloc(&d_output, size * sizeof(float));
+
+    cudaMemcpy(d_input, inputVec.data(), size * sizeof(float), cudaMemcpyHostToDevice);
+
+    int blockSize = 256;
+    int numBlocks = (size + blockSize - 1) / blockSize;
+    relu1d_kernel<<<numBlocks, blockSize>>>(d_input, d_output, size);
+
+    cudaMemcpy(outputVec.data(), d_output, size * sizeof(float), cudaMemcpyDeviceToHost);
+
+    cudaFree(d_input);
+    cudaFree(d_output);
+}
+
+// Kernel that applies ReLU to each element in a flattened 2D matrix
+__global__ void relu2D_kernel(float *input, float *output, int totalSize)
+{
+    int idx = blockIdx.x * blockDim.x + threadIdx.x; // global thread index
+    if (idx < totalSize)
     {
-        output[i] = reluSIMD(value[i]); // Use SIMD ReLU on each row
+        output[idx] = fmaxf(0.0f, input[idx]); // ReLU: max(0, val)
     }
+}
 
-    return output;
+void reluCUDA_batch(const std::vector<std::vector<float>> &input,
+                    std::vector<std::vector<float>> &output)
+{
+    int rows = input.size();
+    int cols = input[0].size();
+    int totalSize = rows * cols;
+
+    // Step 1: Flatten the 2D input matrix to a 1D array
+    std::vector<float> flatInput(totalSize);
+    std::vector<float> flatOutput(totalSize);
+    for (int i = 0; i < rows; ++i)
+        std::copy(input[i].begin(), input[i].end(), flatInput.begin() + i * cols);
+
+    // Step 2: Allocate GPU memory
+    float *d_input, *d_output;
+    cudaMalloc(&d_input, totalSize * sizeof(float));
+    cudaMalloc(&d_output, totalSize * sizeof(float));
+
+    // Step 3: Copy input data from host (CPU) to device (GPU)
+    cudaMemcpy(d_input, flatInput.data(), totalSize * sizeof(float), cudaMemcpyHostToDevice);
+
+    // Step 4: Launch CUDA kernel with 1 thread per matrix element
+    int blockSize = 256;
+    int numBlocks = (totalSize + blockSize - 1) / blockSize;
+    relu2D_kernel<<<numBlocks, blockSize>>>(d_input, d_output, totalSize);
+
+    // Step 5: Copy the result back from device (GPU) to host (CPU)
+    cudaMemcpy(flatOutput.data(), d_output, totalSize * sizeof(float), cudaMemcpyDeviceToHost);
+
+    // Step 6: Free device memory
+    cudaFree(d_input);
+    cudaFree(d_output);
+
+    // Step 7: Reshape the flat 1D output into a 2D matrix structure
+    output.resize(rows, std::vector<float>(cols));
+    for (int i = 0; i < rows; ++i)
+        std::copy(flatOutput.begin() + i * cols, flatOutput.begin() + (i + 1) * cols, output[i].begin());
 }
 
 // example running for relu:
 /*
- std::vector<std::vector<float>> testMatrix = {
-        { -1.0f, 0.0f, 2.0f },
-        { 3.5f, -0.5f, 1.0f }
-    };
+ std::vector<std::vector<float>> input = {
+    { -1.0f, 0.0f, 2.0f },
+    { 3.5f, -0.5f, 1.0f }
+};
 
-    auto result = relu(testMatrix);
+std::vector<std::vector<float>> output;
+reluCUDA_batch(input, output);
 
-    std::cout << "ReLU Output:\n";
-    printMatrix(result);
-        std::cout << std::endl;
+printMatrix(output);
+
 */
 
 //==============================
@@ -213,6 +244,96 @@ std::vector<std::vector<float>> matmul(const std::vector<std::vector<float>> &A,
     return output;
 }
 
+//============================
+//      MATMUL CUDA VERSION
+//============================
+
+// CUDA Matrix Multiply (Tiled with Shared Memory)
+#define TILE_SIZE 32
+
+__global__ void matmul_shared_kernel(const float *A, const float *B, float *C, int M, int K, int N)
+{
+    __shared__ float tileA[TILE_SIZE][TILE_SIZE];
+    __shared__ float tileB[TILE_SIZE][TILE_SIZE];
+
+    int row = blockIdx.y * TILE_SIZE + threadIdx.y;
+    int col = blockIdx.x * TILE_SIZE + threadIdx.x;
+
+    float value = 0.0f;
+
+    for (int t = 0; t < (K + TILE_SIZE - 1) / TILE_SIZE; ++t)
+    {
+        // Load tiles into shared memory
+        if (row < M && t * TILE_SIZE + threadIdx.x < K)
+            tileA[threadIdx.y][threadIdx.x] = A[row * K + t * TILE_SIZE + threadIdx.x];
+        else
+            tileA[threadIdx.y][threadIdx.x] = 0.0f;
+
+        if (col < N && t * TILE_SIZE + threadIdx.y < K)
+            tileB[threadIdx.y][threadIdx.x] = B[(t * TILE_SIZE + threadIdx.y) * N + col];
+        else
+            tileB[threadIdx.y][threadIdx.x] = 0.0f;
+
+        __syncthreads();
+
+        // Multiply the two tiles
+        for (int k = 0; k < TILE_SIZE; ++k)
+            value += tileA[threadIdx.y][k] * tileB[k][threadIdx.x];
+
+        __syncthreads();
+    }
+
+    if (row < M && col < N)
+        C[row * N + col] = value;
+}
+
+std::vector<std::vector<float>> matmulCUDA(const std::vector<std::vector<float>> &A,
+                                           const std::vector<std::vector<float>> &B)
+{
+    int M = A.size();
+    int K = A[0].size();
+    int N = B[0].size();
+
+    std::vector<float> A_flat(M * K);
+    std::vector<float> B_flat(K * N);
+    std::vector<float> C_flat(M * N);
+
+    for (int i = 0; i < M; ++i)
+        for (int j = 0; j < K; ++j)
+            A_flat[i * K + j] = A[i][j];
+
+    for (int i = 0; i < K; ++i)
+        for (int j = 0; j < N; ++j)
+            B_flat[i * N + j] = B[i][j];
+
+    float *d_A, *d_B, *d_C;
+    cudaMalloc(&d_A, A_flat.size() * sizeof(float));
+    cudaMalloc(&d_B, B_flat.size() * sizeof(float));
+    cudaMalloc(&d_C, C_flat.size() * sizeof(float));
+
+    cudaMemcpy(d_A, A_flat.data(), A_flat.size() * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_B, B_flat.data(), B_flat.size() * sizeof(float), cudaMemcpyHostToDevice);
+
+    // NEW (shared memory optimized)
+    dim3 blockSize(TILE_SIZE, TILE_SIZE);
+    dim3 gridSize((N + TILE_SIZE - 1) / TILE_SIZE, (M + TILE_SIZE - 1) / TILE_SIZE);
+    matmul_shared_kernel<<<gridSize, blockSize>>>(d_A, d_B, d_C, M, K, N);
+    cudaDeviceSynchronize();
+
+    cudaMemcpy(C_flat.data(), d_C, C_flat.size() * sizeof(float), cudaMemcpyDeviceToHost);
+
+    std::vector<std::vector<float>> C(M, std::vector<float>(N));
+    for (int i = 0; i < M; ++i)
+        for (int j = 0; j < N; ++j)
+            C[i][j] = C_flat[i * N + j];
+
+    cudaFree(d_A);
+    cudaFree(d_B);
+    cudaFree(d_C);
+
+    return C;
+}
+
 // example running of matrix multiply code:
 /*
      std::vector<std::vector<float>> A = {
@@ -237,20 +358,27 @@ std::vector<std::vector<float>> matmul(const std::vector<std::vector<float>> &A,
 //       LINEAR MATH
 //=============================
 // Applies a linear layer: output = ReLU(input * weights + bias)
-std::vector<std::vector<float>> linear(const std::vector<std::vector<float>> &input, const std::vector<std::vector<float>> &weights, const std::vector<float> &bias)
-{
 
+std::vector<std::vector<float>> linear(const std::vector<std::vector<float>> &input,
+                                       const std::vector<std::vector<float>> &weights,
+                                       const std::vector<float> &bias)
+{
     auto output = matmul(input, weights); // [batch x output_dim]
     int batch_size = output.size();
     int output_dim = output[0].size();
 
+// Add bias
 #pragma omp parallel for
     for (int i = 0; i < batch_size; ++i)
     {
         for (int j = 0; j < output_dim; ++j)
-            output[i][j] += bias[j];     // Add bias
-        output[i] = reluSIMD(output[i]); // Apply SIMD ReLU
+        {
+            output[i][j] += bias[j];
+        }
     }
+
+    // Use CUDA ReLU
+    reluCUDA_batch(output, output);
 
     return output;
 }
