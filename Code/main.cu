@@ -6,14 +6,19 @@
 #include "AiComputations.h"
 #include <chrono>
 #include <random>
-
+#include <cuda_runtime.h>
+#include <cstdlib>
+#include <ctime>
+#include <cublas_v2.h>
 // DONT USE .h in COMPILE COMMAND
 //  use rm Ada.exe to remove original .exe file if present, or EXAMPLEFOLDER/Ada.exe
-// USE THIS SINCE IM USING CUDA: nvcc -O3 Code/main.cu -o ada
+// USE THIS SINCE IM USING CUDA: nvcc -O3 -lcublas Code/main.cu -o ada
 // then .\ada to run
+
 
 int main()
 {
-    
+  
+
     return 0;
 }
