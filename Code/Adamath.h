@@ -3,7 +3,7 @@
 #include <vector>
 #include <immintrin.h> // For SIMD intrinsics like _mm_max_ps, _mm_loadu_ps
 #include <numeric>     // for std::accumulate
-#include <algorithm>   // ← This is required for std::max_element
+#include <algorithm>   // This is required for std::max_element
 #include <cublas_v2.h>
 #include <cuda_runtime.h>
 //============================
@@ -603,11 +603,11 @@ std::vector<std::vector<float>> linearCUDA(const std::vector<std::vector<float>>
 //  LINEAR CUBLAS
 //======================
 std::vector<std::vector<float>> linearCUBLAS(
-    const std::vector<std::vector<float>>& input,
-    const std::vector<std::vector<float>>& weights,
-    const std::vector<float>& bias,
-    cublasHandle_t handle
-) {
+    const std::vector<std::vector<float>> &input,
+    const std::vector<std::vector<float>> &weights,
+    const std::vector<float> &bias,
+    cublasHandle_t handle)
+{
     const int batchSize = input.size();
     const int inputDim = input[0].size();
     const int outputDim = weights.size(); // weights = [outputDim][inputDim]
@@ -620,12 +620,12 @@ std::vector<std::vector<float>> linearCUBLAS(
     // Flatten input in one pass (avoid nested loops)
     std::vector<float> flatInput;
     flatInput.reserve(inputSize);
-    for (const auto& row : input)
+    for (const auto &row : input)
         flatInput.insert(flatInput.end(), row.begin(), row.end());
 
     std::vector<float> flatWeights;
     flatWeights.reserve(weightSize);
-    for (const auto& row : weights)
+    for (const auto &row : weights)
         flatWeights.insert(flatWeights.end(), row.begin(), row.end());
 
     std::vector<float> flatBias = bias;
@@ -691,20 +691,20 @@ std::vector<float> softmax(const std::vector<float> &input)
     int size = input.size();
     std::vector<float> output(size);
 
-    // Step 1: Find the max value for numerical stability
+    // Find the max value for numerical stability
     float maxVal = *std::max_element(input.begin(), input.end());
 
-    // Step 2: Compute exponentials of (x - maxVal)
+    // Compute exponentials of (x - maxVal)
     std::vector<float> exps(size);
     for (int i = 0; i < size; ++i)
     {
         exps[i] = std::exp(input[i] - maxVal);
     }
 
-    // Step 3: Sum of exponentials
+    // Sum of exponentials
     float sum = std::accumulate(exps.begin(), exps.end(), 0.0f);
 
-    // Step 4: Normalize
+    // Normalize
     for (int i = 0; i < size; ++i)
     {
         output[i] = exps[i] / sum;
