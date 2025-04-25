@@ -12,10 +12,8 @@
 // USE THIS SINCE IM USING CUDA: nvcc -O3 Code/main.cu -o ada
 // then .\ada to run
 
-
-
 int main()
 {
-   
+    
     return 0;
 }
