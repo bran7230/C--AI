@@ -2,7 +2,7 @@
 #include <cmath>
 #include <vector>
 #include <string>
-#include "Adamath.h"
+#include "Adamath.cuH"
 #include "AiComputations.h"
 #include <chrono>
 #include <random>
@@ -15,9 +15,10 @@
 // USE THIS SINCE IM USING CUDA:  nvcc -O3 -arch=sm_70 -lcublas -o ada Code/main.cu Code/Adamath.cu
 // then .\ada to run
 
+
 int main()
 {
     
-
+ 
     return 0;
 }

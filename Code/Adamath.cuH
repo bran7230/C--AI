@@ -8,7 +8,7 @@ using namespace nvcuda;
 //============================
 //      RELU MATH
 //============================
-#define TILE_SIZE 32
+#define TILE_SIZE 16
 __global__ void relu1d_kernel(float *input, float *output, int size)
 {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -100,27 +100,33 @@ std::vector<std::vector<float>> sigmoidBatch(const std::vector<std::vector<float
     return output;
 }
 
-//==============================
-//      MATRIX MATH
-//==============================
 
+//==============================================
+//                CPU MATRIX MATH
+//==============================================
+
+// Matrix Transpose (Parallelized)
 std::vector<std::vector<float>> transpose(const std::vector<std::vector<float>> &matrix)
 {
     int rows = matrix.size();
     int cols = matrix[0].size();
     std::vector<std::vector<float>> transposed(cols, std::vector<float>(rows));
+
 #pragma omp parallel for collapse(2)
     for (int i = 0; i < rows; ++i)
         for (int j = 0; j < cols; ++j)
             transposed[j][i] = matrix[i][j];
+
     return transposed;
 }
 
+// SIMD-optimized Dot Product
 float dotSIMD(const std::vector<float> &a, const std::vector<float> &b)
 {
     int size = a.size();
     int i = 0;
     float result = 0.0f;
+
     __m128 sum = _mm_setzero_ps();
     for (; i <= size - 4; i += 4)
     {
@@ -129,179 +135,140 @@ float dotSIMD(const std::vector<float> &a, const std::vector<float> &b)
         __m128 prod = _mm_mul_ps(va, vb);
         sum = _mm_add_ps(sum, prod);
     }
+
     float temp[4];
     _mm_storeu_ps(temp, sum);
     result = temp[0] + temp[1] + temp[2] + temp[3];
+
     for (; i < size; ++i)
         result += a[i] * b[i];
+
     return result;
 }
 
+// Matrix Multiplication (CPU fallback, SIMD + OpenMP)
 std::vector<std::vector<float>> matmul(const std::vector<std::vector<float>> &A,
                                        const std::vector<std::vector<float>> &B)
 {
     int aRows = A.size();
     int aCols = A[0].size();
     int bCols = B[0].size();
+
     auto B_T = transpose(B);
+
     std::vector<std::vector<float>> output(aRows, std::vector<float>(bCols, 0.0f));
+
 #pragma omp parallel for collapse(2)
     for (int i = 0; i < aRows; ++i)
         for (int j = 0; j < bCols; ++j)
             output[i][j] = dotSIMD(A[i], B_T[j]);
+
     return output;
 }
 
-//============================
-//      CUDA MATMUL
-//============================
+///////////////////////////////////////////////////////////
+//                 CUDA MATMUL TENSOR CORE
+///////////////////////////////////////////////////////////
 
-__global__ void matmul_shared_float4_kernel(const float *A, const float *B, float *C, int M, int K, int N)
+//==============================================
+// CUDA Kernel: Tensor Core Matmul + Fused Bias
+// (FP16 multiply, FP32 accumulate)
+//==============================================
+__global__ void matmulBiasTensorCoreKernel(const half *A, const half *B, const half *bias,
+                                           float *C, int M, int K, int N)
 {
-    __shared__ float tileA[TILE_SIZE][TILE_SIZE];
-    __shared__ float tileB[TILE_SIZE][TILE_SIZE];
-    int row = blockIdx.y * TILE_SIZE + threadIdx.y;
-    int col = blockIdx.x * TILE_SIZE + threadIdx.x;
-    float value = 0.0f;
-    for (int t = 0; t < (K + TILE_SIZE - 1) / TILE_SIZE; ++t)
+    // Warp and thread indices
+    int warpM = (blockIdx.y * blockDim.y + threadIdx.y) / 32;
+    int warpN = (blockIdx.x * blockDim.x + threadIdx.x) / 32;
+
+    if (warpM * 16 >= M || warpN * 16 >= N) return; // Bounds check
+
+    // Create fragments
+    wmma::fragment<wmma::matrix_a, 16, 16, 16, half, wmma::row_major> aFrag;
+    wmma::fragment<wmma::matrix_b, 16, 16, 16, half, wmma::row_major> bFrag;
+    wmma::fragment<wmma::accumulator, 16, 16, 16, float> accFrag;
+
+    wmma::fill_fragment(accFrag, 0.0f); // Initialize accumulator to zero
+
+    // Loop over K dimension tiles
+    for (int k = 0; k < K; k += 16)
     {
-        int tiledCol = t * TILE_SIZE + threadIdx.x;
-        int tiledRow = t * TILE_SIZE + threadIdx.y;
-        tileA[threadIdx.y][threadIdx.x] = (row < M && tiledCol < K) ? A[row * K + tiledCol] : 0.0f;
-        tileB[threadIdx.y][threadIdx.x] = (tiledRow < K && col < N) ? B[tiledRow * N + col] : 0.0f;
-        __syncthreads();
-#pragma unroll
-        for (int k = 0; k < TILE_SIZE; ++k)
-            value += tileA[threadIdx.y][k] * tileB[k][threadIdx.x];
-        __syncthreads();
+        if (k + 16 <= K)
+        {
+            const half *tileA = A + warpM * 16 * K + k;
+            const half *tileB = B + k * N + warpN * 16;
+
+            // Load tiles into fragments
+            wmma::load_matrix_sync(aFrag, tileA, K);
+            wmma::load_matrix_sync(bFrag, tileB, N);
+
+            // Perform matrix multiply-accumulate
+            wmma::mma_sync(accFrag, aFrag, bFrag, accFrag);
+        }
     }
-    if (row < M && col < N)
-        C[row * N + col] = value;
-}
 
-std::vector<std::vector<float>> matmulCUDA(const std::vector<std::vector<float>> &A,
-                                           const std::vector<std::vector<float>> &B)
-{
-    int M = A.size();
-    int K = A[0].size();
-    int N = B[0].size();
+    // Define output pointer for this warp's tile
+    float *tileC = C + warpM * 16 * N + warpN * 16;
 
-    std::vector<float> A_flat(M * K);
-    std::vector<float> B_flat(K * N);
-    std::vector<float> C_flat(M * N);
-
-    for (int i = 0; i < M; ++i)
-        for (int j = 0; j < K; ++j)
-            A_flat[i * K + j] = A[i][j];
-
-    for (int i = 0; i < K; ++i)
-        for (int j = 0; j < N; ++j)
-            B_flat[i * N + j] = B[i][j];
-
-    float *d_A, *d_B, *d_C;
-    cudaMalloc(&d_A, A_flat.size() * sizeof(float));
-    cudaMalloc(&d_B, B_flat.size() * sizeof(float));
-    cudaMalloc(&d_C, C_flat.size() * sizeof(float));
-
-    cudaMemcpy(d_A, A_flat.data(), A_flat.size() * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_B, B_flat.data(), B_flat.size() * sizeof(float), cudaMemcpyHostToDevice);
-
-    dim3 blockSize(TILE_SIZE, TILE_SIZE);
-    dim3 gridSize((N + TILE_SIZE - 1) / TILE_SIZE, (M + TILE_SIZE - 1) / TILE_SIZE);
-    matmul_shared_float4_kernel<<<gridSize, blockSize>>>(d_A, d_B, d_C, M, K, N);
-    cudaDeviceSynchronize();
-
-    cudaMemcpy(C_flat.data(), d_C, C_flat.size() * sizeof(float), cudaMemcpyDeviceToHost);
-
-    std::vector<std::vector<float>> C(M, std::vector<float>(N));
-    for (int i = 0; i < M; ++i)
-        for (int j = 0; j < N; ++j)
-            C[i][j] = C_flat[i * N + j];
-
-    cudaFree(d_A);
-    cudaFree(d_B);
-    cudaFree(d_C);
-
-    return C;
-}
-__global__ void matmulBiasFusedFloat4Kernel(const float *A, const float *B, const float *bias,
-    float *C, int M, int K, int N)
-{
-__shared__ float tileA[TILE_SIZE][TILE_SIZE];
-__shared__ float tileB[TILE_SIZE][TILE_SIZE];
-
-int row = blockIdx.y * TILE_SIZE + threadIdx.y;
-int col = blockIdx.x * TILE_SIZE + threadIdx.x;
-
-float value = 0.0f;
-
-for (int t = 0; t < (K + TILE_SIZE - 1) / TILE_SIZE; ++t)
-{
-int tiledCol = t * TILE_SIZE + threadIdx.x;
-int tiledRow = t * TILE_SIZE + threadIdx.y;
-
-if (K % 4 == 0 && (tiledCol + 3 < K) && (row < M))
-{
-uintptr_t addrA = reinterpret_cast<uintptr_t>(&A[row * K + tiledCol]);
-if (addrA % 16 == 0)
-{
-const float4 *vecA = reinterpret_cast<const float4 *>(&A[row * K + tiledCol]);
-float4 loadA = *vecA;
-tileA[threadIdx.y][threadIdx.x + 0] = loadA.x;
-tileA[threadIdx.y][threadIdx.x + 1] = loadA.y;
-tileA[threadIdx.y][threadIdx.x + 2] = loadA.z;
-tileA[threadIdx.y][threadIdx.x + 3] = loadA.w;
-}
-else
-{
-tileA[threadIdx.y][threadIdx.x] = (tiledCol < K) ? A[row * K + tiledCol] : 0.0f;
-}
-}
-else
-{
-tileA[threadIdx.y][threadIdx.x] = (tiledCol < K && row < M) ? A[row * K + tiledCol] : 0.0f;
-}
-
-if (K % 4 == 0 && (tiledRow + 3 < K) && (col < N))
-{
-uintptr_t addrB = reinterpret_cast<uintptr_t>(&B[tiledRow * N + col]);
-if (addrB % 16 == 0)
-{
-const float4 *vecB = reinterpret_cast<const float4 *>(&B[tiledRow * N + col]);
-float4 loadB = *vecB;
-tileB[threadIdx.y + 0][threadIdx.x] = loadB.x;
-tileB[threadIdx.y + 1][threadIdx.x] = loadB.y;
-tileB[threadIdx.y + 2][threadIdx.x] = loadB.z;
-tileB[threadIdx.y + 3][threadIdx.x] = loadB.w;
-}
-else
-{
-tileB[threadIdx.y][threadIdx.x] = (tiledRow < K) ? B[tiledRow * N + col] : 0.0f;
-}
-}
-else
-{
-tileB[threadIdx.y][threadIdx.x] = (tiledRow < K && col < N) ? B[tiledRow * N + col] : 0.0f;
-}
-
-__syncthreads();
+    // Store accumulator results with fused bias addition
 #pragma unroll
-for (int k = 0; k < TILE_SIZE; ++k)
-value += tileA[threadIdx.y][k] * tileB[k][threadIdx.x];
-__syncthreads();
+    for (int i = 0; i < accFrag.num_elements; ++i)
+    {
+        int row = (i / 16);
+        int col = (i % 16);
+        int globalRow = warpM * 16 + row;
+        int globalCol = warpN * 16 + col;
+
+        if (globalRow < M && globalCol < N)
+        {
+            float biasVal = __half2float(bias[globalCol]);
+            tileC[row * N + col] = accFrag.x[i] + biasVal;
+        }
+    }
 }
 
-if (row < M && col < N)
-C[row * N + col] = value + bias[col];
-}
-
-void matmulBiasFusedFloat4Launch(const float *d_A, const float *d_B, const float *d_bias,
-float *d_C, int M, int K, int N)
+__global__ void addBiasBatchKernel(float *output, const float *bias, int batchSize, int outputDim)
 {
-dim3 threads(TILE_SIZE, TILE_SIZE);
-dim3 blocks((N + TILE_SIZE - 1) / TILE_SIZE, (M + TILE_SIZE - 1) / TILE_SIZE);
-matmulBiasFusedFloat4Kernel<<<blocks, threads>>>(d_A, d_B, d_bias, d_C, M, K, N);
-cudaDeviceSynchronize();
+    int row = blockIdx.y * blockDim.y + threadIdx.y; // Batch index
+    int col = blockIdx.x * blockDim.x + threadIdx.x; // Output dimension
+
+    if (row < batchSize && col < outputDim)
+    {
+        int idx = row * outputDim + col;
+        output[idx] += bias[col];
+    }
+}
+
+// GPU-Only Batched cuBLAS MatMul + Bias (No memcpy, No malloc inside)
+void matmulCUBLAS_GPUOnly_Batched(cublasHandle_t handle,
+                                  const half *d_A,    // (batchSize x inputDim)
+                                  const half *d_B,    // (inputDim x outputDim)
+                                  const float *d_bias,// (outputDim)
+                                  float *d_C,         // (batchSize x outputDim)
+                                  int batchSize, int inputDim, int outputDim)
+{
+    const float alpha = 1.0f;
+    const float beta = 0.0f;
+
+    // Matrix multiply: C = A x B
+    // d_A: (batchSize x inputDim)
+    // d_B: (inputDim x outputDim)
+    // d_C: (batchSize x outputDim)
+    cublasGemmEx(handle,
+                 CUBLAS_OP_N, CUBLAS_OP_N,
+                 outputDim, batchSize, inputDim,
+                 &alpha,
+                 d_B, CUDA_R_16F, outputDim,
+                 d_A, CUDA_R_16F, inputDim,
+                 &beta,
+                 d_C, CUDA_R_32F, outputDim,
+                 CUBLAS_COMPUTE_32F_FAST_16F,
+                 CUBLAS_GEMM_DEFAULT_TENSOR_OP);
+
+    // Add bias
+    dim3 blockDim(16, 16);
+    dim3 gridDim((outputDim + 15) / 16, (batchSize + 15) / 16);
+    addBiasBatchKernel<<<gridDim, blockDim>>>(d_C, d_bias, batchSize, outputDim);
 }
 
 //=============================
