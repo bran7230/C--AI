@@ -87,5 +87,5 @@ g++ -fopenmp -O3 Code/Ada.cpp -o Ada.exe
 For CUDA (Tensor Core enabled):
 ```bash
 nvcc -O3 -arch=sm_70 -lcublas -o ada Code/main.cu Code/Adamath.cu
-./ada
+.\ada
 ```
