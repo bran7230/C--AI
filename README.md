@@ -1,3 +1,4 @@
+
 # C++ Neural Network & Transformer Engine (Scratch-Built AI)
 
 This is a low-level, high-performance C++ implementation of a neural network and transformer architecture built entirely from scratch. It focuses on learning, reasoning, and generating text without relying on ML libraries — enabling **full control and true understanding** of how models like GPT function.
@@ -22,6 +23,7 @@ This is a low-level, high-performance C++ implementation of a neural network and
   - `cross_entropy(batch)`
   - `binary_cross_entropy(batch)`
 - **CUDA acceleration support** (Tiled Shared Memory + `float4` + loop unrolling)
+- **Tensor Core kernel** using `wmma` and fused bias
 
 ### Neural Network Components
 - One-hot encoding
@@ -38,6 +40,7 @@ This is a low-level, high-performance C++ implementation of a neural network and
 - CUDA Matrix multiply (2048 x 2048): **~0.15s**
 - CUDA Matrix multiply (4096 x 4096): **~0.042s**
 - CUDA Matrix multiply (16384 x 16384): **~0.023s** (float4 tiled + unrolled kernel)
+- Tensor Core fusedLinearSoftmax (1024 x 1024): **~1.41ms** (using `wmma` fragments, row/col major)
 
 ---
 
@@ -75,12 +78,14 @@ This is a low-level, high-performance C++ implementation of a neural network and
 
 ## How to Build & Run
 
+For CPU build:
 ```bash
 g++ -fopenmp -O3 Code/Ada.cpp -o Ada.exe
 ./Ada.exe
 ```
 
-For CUDA:
+For CUDA (Tensor Core enabled):
 ```bash
-nvcc -O3 Code/main.cu -o ada.exe
-.\Ada.exe
+nvcc -O3 -arch=sm_70 -lcublas -o ada Code/main.cu Code/Adamath.cu
+./ada
+```
