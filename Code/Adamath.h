@@ -512,9 +512,12 @@ std::vector<std::vector<float>> input = {
 
 */
 
-//================================
-//     LINEAR CUDA
-//================================
+
+
+//======================
+//  LINEAR CUBLAS
+//======================
+
 __global__ void addBiasEfficient(float *output, const float *bias, int batchSize, int outputDim)
 {
     int row = blockIdx.y * blockDim.y + threadIdx.y; // batch row
@@ -526,82 +529,7 @@ __global__ void addBiasEfficient(float *output, const float *bias, int batchSize
         output[idx] += bias[col]; // bias is broadcasted across rows
     }
 }
-#define cudaCheck(ans)                        \
-    {                                         \
-        gpuAssert((ans), __FILE__, __LINE__); \
-    }
-inline void gpuAssert(cudaError_t code, const char *file, int line)
-{
-    if (code != cudaSuccess)
-        fprintf(stderr, "CUDA Error: %s %s %d\n", cudaGetErrorString(code), file, line);
-}
-std::vector<std::vector<float>> linearCUDA(const std::vector<std::vector<float>> &input,
-                                           const std::vector<std::vector<float>> &weights,
-                                           const std::vector<float> &bias)
-{
-    int batchSize = input.size();
-    int inputDim = input[0].size();
-    int outputDim = weights.size(); // Assuming weights = [outputDim][inputDim]
 
-    // Flatten input and weights
-    std::vector<float> flatInput(batchSize * inputDim);
-    std::vector<float> flatWeights(outputDim * inputDim);
-    std::vector<float> flatBias = bias;                   // Already 1D
-    std::vector<float> flatOutput(batchSize * outputDim); // Result buffer
-
-    for (int i = 0; i < batchSize; ++i)
-        for (int j = 0; j < inputDim; ++j)
-            flatInput[i * inputDim + j] = input[i][j];
-
-    for (int i = 0; i < outputDim; ++i)
-        for (int j = 0; j < inputDim; ++j)
-            flatWeights[i * inputDim + j] = weights[i][j];
-
-    // Allocate GPU memory
-    float *d_input, *d_weights, *d_bias, *d_output;
-    cudaMalloc(&d_input, flatInput.size() * sizeof(float));
-    cudaMalloc(&d_weights, flatWeights.size() * sizeof(float));
-    cudaMalloc(&d_bias, flatBias.size() * sizeof(float));
-    cudaMalloc(&d_output, flatOutput.size() * sizeof(float));
-
-    // Copy to device
-    cudaMemcpy(d_input, flatInput.data(), flatInput.size() * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_weights, flatWeights.data(), flatWeights.size() * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_bias, flatBias.data(), flatBias.size() * sizeof(float), cudaMemcpyHostToDevice);
-
-    // Launch core linearCUDA
-    // Use your renamed launcher
-    cudaCheck(cudaPeekAtLastError());
-    cudaCheck(cudaDeviceSynchronize());
-
-    matmulBiasFusedFloat4Launch(d_input, d_weights, d_bias, d_output, batchSize, inputDim, outputDim);
-
-    dim3 threads(16, 16);
-    dim3 blocks((outputDim + 15) / 16, (batchSize + 15) / 16);
-    addBiasEfficient<<<blocks, threads>>>(d_output, d_bias, batchSize, outputDim);
-    cudaDeviceSynchronize();
-
-    // Download result
-    cudaMemcpy(flatOutput.data(), d_output, flatOutput.size() * sizeof(float), cudaMemcpyDeviceToHost);
-
-    // Convert to 2D output
-    std::vector<std::vector<float>> output(batchSize, std::vector<float>(outputDim));
-    for (int i = 0; i < batchSize; ++i)
-        for (int j = 0; j < outputDim; ++j)
-            output[i][j] = flatOutput[i * outputDim + j];
-
-    // Cleanup
-    cudaFree(d_input);
-    cudaFree(d_weights);
-    cudaFree(d_bias);
-    cudaFree(d_output);
-
-    return output;
-}
-
-//======================
-//  LINEAR CUBLAS
-//======================
 std::vector<std::vector<float>> linearCUBLAS(
     const std::vector<std::vector<float>> &input,
     const std::vector<std::vector<float>> &weights,
