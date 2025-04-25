@@ -512,8 +512,6 @@ std::vector<std::vector<float>> input = {
 
 */
 
-
-
 //======================
 //  LINEAR CUBLAS
 //======================
