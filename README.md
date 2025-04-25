@@ -56,8 +56,8 @@ This is a low-level, high-performance C++ implementation of a neural network and
 | **Tensor Core Matmul (16384 × 16384, cuBLAS)** | **~122ms** (~72 TFLOPS ) |
 | Batched Tensor Core Matmul + Bias (16384 × 16384) | **~122ms** (~72 TFLOPS) |
 
-✅ Tensor Core matmul achieved ~**70+ TFLOPS** performance!  
-✅ Batched fully on GPU without CPU bottlenecks.
+Tensor Core matmul achieved ~**70+ TFLOPS** performance!  
+Batched fully on GPU without CPU bottlenecks.
 
 ---
 
