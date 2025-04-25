@@ -50,8 +50,6 @@ This is a low-level, high-performance C++ implementation of a neural network and
 | ReLU on 1M × 512 matrix (SIMD + OpenMP) | **~0.32s** |
 | Softmax on 1M × 512 matrix (SIMD + OpenMP) | **~0.36s** |
 | CPU Matrix multiply (2048 × 2048, OpenMP) | **~1.17s** |
-| CUDA Matrix multiply (4096 × 4096, float4 tiled + shared mem) | **~0.042s** |
-| CUDA Matrix multiply (16384 × 16384, float4 tiled) | **~0.023s** |
 | **Tensor Core Matmul (4096 × 4096, cuBLAS)** | **~10–15ms** (~20–30 TFLOPS) |
 | **Tensor Core Matmul (16384 × 16384, cuBLAS)** | **~122ms** (~72 TFLOPS ) |
 | Batched Tensor Core Matmul + Bias (16384 × 16384) | **~122ms** (~72 TFLOPS) |

@@ -8,7 +8,7 @@ using namespace nvcuda;
 //============================
 //      RELU MATH
 //============================
-#define TILE_SIZE 16
+#define TILE_SIZE 32
 __global__ void relu1d_kernel(float *input, float *output, int size)
 {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
