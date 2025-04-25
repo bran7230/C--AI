@@ -1,4 +1,4 @@
-# C++ Neural Network & Transformer Engine (Scratch-Built AI)
+# C++(AND CUDA) Neural Network & Transformer Engine (Scratch-Built AI)
 
 This is a low-level, high-performance C++ implementation of a neural network and transformer architecture built entirely from scratch. It focuses on learning, reasoning, and generating text without relying on ML libraries — enabling **full control and true understanding** of how models like GPT function.
 
