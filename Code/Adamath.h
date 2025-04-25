@@ -12,7 +12,7 @@
 #include <cuda_runtime.h>
 #include <float.h>
 #include <cuda_fp16.h>
-
+#include <omp.h>
 //========================
 //     CUDA KERNELS
 //========================
