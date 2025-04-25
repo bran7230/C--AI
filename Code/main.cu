@@ -18,7 +18,15 @@
 
 int main()
 {
-  
+    std::vector<float> input = {1.0f, -2.0f, 3.5f, -4.0f};
+    std::vector<float> output(4);
+
+    reluCUDA1D(input, output);
+
+    std::cout << "ReLU Output: ";
+    for (float v : output)
+        std::cout << v << " ";
+    std::cout << std::endl;
 
     return 0;
 }
