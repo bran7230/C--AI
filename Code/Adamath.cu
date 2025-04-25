@@ -1,4 +1,9 @@
 #include "Adamath.h"
+#include <cuda_fp16.h>
+#include <mma.h>
+using namespace nvcuda;
+
+
 
 //============================
 //      RELU MATH
@@ -596,15 +601,77 @@ std::vector<std::vector<float>> computeDW(const std::vector<float> &x, const std
     return dW;
 }
 
-__global__ void dummyKernel() {}
+
+// High-performance warp-tiled Tensor Core kernel (16x16 blocks)
+__global__ void turboFusedTensorCore_half_kernel(
+    const __half* __restrict__ A,
+    const __half* __restrict__ B,
+    const __half* __restrict__ bias,
+    __half* __restrict__ output,
+    int M, int K, int N)
+{
+    // Each warp computes a 16x16 tile of C
+    int warpM = blockIdx.y;
+    int warpN = blockIdx.x;
+
+    int row = warpM * 16;
+    int col = warpN * 16;
+
+    if (row >= M || col >= N) return;
+
+    // Accumulator fragment (FP32)
+    wmma::fragment<wmma::accumulator, 16, 16, 16, float> acc_frag;
+    wmma::fill_fragment(acc_frag, 0.0f);
+
+    // Loop over K tiles
+    for (int t = 0; t < K; t += 16)
+    {
+        if (t + 15 < K)
+        {
+            // Load A and B tiles into WMMA fragments
+            wmma::fragment<wmma::matrix_a, 16, 16, 16, __half, wmma::row_major> a_frag;
+            wmma::fragment<wmma::matrix_b, 16, 16, 16, __half, wmma::col_major> b_frag;
+
+            if (row + 15 < M && t + 15 < K)
+                wmma::load_matrix_sync(a_frag, A + row * K + t, K);
+
+            if (t + 15 < K && col + 15 < N)
+                wmma::load_matrix_sync(b_frag, B + t * N + col, N);
+
+            wmma::mma_sync(acc_frag, a_frag, b_frag, acc_frag);
+        }
+    }
+
+    // Add bias and write result (coalesced, 1 warp stores 16x16 tile)
+    #pragma unroll
+    for (int i = 0; i < acc_frag.num_elements; ++i)
+    {
+        int r = i / 16;
+        int c = i % 16;
+
+        int globalRow = row + r;
+        int globalCol = col + c;
+
+        if (globalRow < M && globalCol < N)
+        {
+            float val = acc_frag.x[i];
+            val += __half2float(bias[globalCol]);
+            output[globalRow * N + globalCol] = __float2half(val);
+        }
+    }
+}
 
 void fusedLinearSoftmaxTensorCore_half(
     const __half* d_input,
     const __half* d_weights,
     const __half* d_bias,
-    __half* d_probs,
+    __half* d_output,
     int batchSize, int inputDim, int outputDim)
 {
-    // TEMP: just zero memory for now or use cudaMemset
-    cudaMemset(d_probs, 0, batchSize * outputDim * sizeof(__half));
+    dim3 threads(32, 4); // 4 warps per block for higher occupancy
+    dim3 blocks((outputDim + 15) / 16, (batchSize + 15) / 16);
+    turboFusedTensorCore_half_kernel<<<blocks, threads>>>(
+        d_input, d_weights, d_bias, d_output,
+        batchSize, inputDim, outputDim);
+    cudaDeviceSynchronize();
 }
