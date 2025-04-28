@@ -628,6 +628,7 @@ __global__ void turboFusedTensorCore_half_kernel(
     }
 }
 
+
 void fusedLinearSoftmaxTensorCore_half(
     const __half* d_input,
     const __half* d_weights,

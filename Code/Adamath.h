@@ -61,3 +61,4 @@ std::vector<std::vector<float>> sigmoidDerivative(const std::vector<std::vector<
 std::vector<float> computeGradient(const std::vector<float> &probs, int targetId);
 std::vector<float> oneHot(int vocabSize, int index);
 std::vector<std::vector<float>> computeDW(const std::vector<float> &x, const std::vector<float> &dZ);
+

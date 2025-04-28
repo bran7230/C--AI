@@ -14,6 +14,7 @@
 // This function subtracts (learningRate × gradient) from each weight,
 // nudging the weights in the direction that reduces the loss.
 
+
 void updateWeights(std::vector<std::vector<float>> &W, const std::vector<std::vector<float>> &dW, float learningRate)
 {
     for (int i = 0; i < W.size(); ++i)
