@@ -96,7 +96,7 @@ Batched fully on GPU without CPU bottlenecks.
 ## CUDA Build
 ```bash
 nvcc -O3 -arch=sm_70 -lcublas -o ada Code/main.cu 
-.\ada
+./ada
 ```
 ---
 ## How to Build & Run
