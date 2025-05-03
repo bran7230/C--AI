@@ -1,4 +1,4 @@
-#include "Adamath.h"
+#include "Adamath.cuH"
 #include <cuda_fp16.h>
 #include <mma.h>
 using namespace nvcuda;

@@ -1,0 +1,10 @@
+// Code/math/Adamath.cu
+#include "Adamath.cuH"
+
+// Include CUDA implementation headers
+#include "Linear.cuH"
+#include "Matmul.cuH"
+#include "Other.cuH"
+#include "Relu.cuH"
+#include "Sigmoid.cuH"
+#include "Softmax.cuH"

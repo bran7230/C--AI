@@ -13,6 +13,8 @@
 #include <float.h>
 #include <cuda_fp16.h>
 #include <omp.h>
+#include <mma.h>
+
 //========================
 //     CUDA KERNELS
 //========================
