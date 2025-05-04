@@ -8,3 +8,7 @@
 #include "Relu.cuH"
 #include "Sigmoid.cuH"
 #include "Softmax.cuH"
+
+//=======================================================================
+//  COMPILE THIS FILE WHEN USING MY FUNCTIONS, IT LINKS IT ALL TOGETHER
+//=======================================================================
