@@ -95,7 +95,7 @@ Batched fully on GPU without CPU bottlenecks.
 ---
 ## CUDA Build
 ```bash
-nvcc -O3 -arch=sm_70 -lcublas -o ada Code/main.cu 
+nvcc -O3 -arch=sm_70 -lcublas -Xcompiler "/openmp" -o ada Code/main.cu Code/math/Adamath.cu
 ./ada
 ```
 ---
