@@ -3,8 +3,6 @@
 #include <mma.h>
 using namespace nvcuda;
 
-
-
 //============================
 //      RELU MATH
 //============================
@@ -100,7 +98,6 @@ std::vector<std::vector<float>> sigmoidBatch(const std::vector<std::vector<float
     return output;
 }
 
-
 //==============================================
 //                CPU MATRIX MATH
 //==============================================
@@ -181,7 +178,8 @@ __global__ void matmulBiasTensorCoreKernel(const half *A, const half *B, const h
     int warpM = (blockIdx.y * blockDim.y + threadIdx.y) / 32;
     int warpN = (blockIdx.x * blockDim.x + threadIdx.x) / 32;
 
-    if (warpM * 16 >= M || warpN * 16 >= N) return; // Bounds check
+    if (warpM * 16 >= M || warpN * 16 >= N)
+        return; // Bounds check
 
     // Create fragments
     wmma::fragment<wmma::matrix_a, 16, 16, 16, half, wmma::row_major> aFrag;
@@ -241,10 +239,10 @@ __global__ void addBiasBatchKernel(float *output, const float *bias, int batchSi
 
 // GPU-Only Batched cuBLAS MatMul + Bias (No memcpy, No malloc inside)
 void matmulCUBLAS_GPUOnly_Batched(cublasHandle_t handle,
-                                  const half *d_A,    // (batchSize x inputDim)
-                                  const half *d_B,    // (inputDim x outputDim)
-                                  const float *d_bias,// (outputDim)
-                                  float *d_C,         // (batchSize x outputDim)
+                                  const half *d_A,     // (batchSize x inputDim)
+                                  const half *d_B,     // (inputDim x outputDim)
+                                  const float *d_bias, // (outputDim)
+                                  float *d_C,          // (batchSize x outputDim)
                                   int batchSize, int inputDim, int outputDim)
 {
     const float alpha = 1.0f;
@@ -276,97 +274,99 @@ void matmulCUBLAS_GPUOnly_Batched(cublasHandle_t handle,
 //=============================
 
 std::vector<std::vector<float>> linear(const std::vector<std::vector<float>> &input,
-const std::vector<std::vector<float>> &weights,
-const std::vector<float> &bias)
+                                       const std::vector<std::vector<float>> &weights,
+                                       const std::vector<float> &bias)
 {
-auto output = matmul(input, weights);
-int batch_size = output.size();
-int output_dim = output[0].size();
+    auto output = matmul(input, weights);
+    int batch_size = output.size();
+    int output_dim = output[0].size();
 
 #pragma omp parallel for
-for (int i = 0; i < batch_size; ++i)
-for (int j = 0; j < output_dim; ++j)
-output[i][j] += bias[j];
+    for (int i = 0; i < batch_size; ++i)
+        for (int j = 0; j < output_dim; ++j)
+            output[i][j] += bias[j];
 
-reluCUDA_batch(output, output);
+    reluCUDA_batch(output, output);
 
-return output;
+    return output;
 }
 
 __global__ void addBiasEfficient(float *output, const float *bias, int batchSize, int outputDim)
 {
-int row = blockIdx.y * blockDim.y + threadIdx.y;
-int col = blockIdx.x * blockDim.x + threadIdx.x;
-if (row < batchSize && col < outputDim)
-{
-int idx = row * outputDim + col;
-output[idx] += bias[col];
-}
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    if (row < batchSize && col < outputDim)
+    {
+        int idx = row * outputDim + col;
+        output[idx] += bias[col];
+    }
 }
 
 std::vector<std::vector<float>> linearCUBLAS(
-const std::vector<std::vector<float>> &input,
-const std::vector<std::vector<float>> &weights,
-const std::vector<float> &bias,
-cublasHandle_t handle)
+    const std::vector<std::vector<float>> &input,
+    const std::vector<std::vector<float>> &weights,
+    const std::vector<float> &bias,
+    cublasHandle_t handle)
 {
-const int batchSize = input.size();
-const int inputDim = input[0].size();
-const int outputDim = weights.size();
+    const int batchSize = input.size();
+    const int inputDim = input[0].size();
+    const int outputDim = weights.size();
 
-const size_t inputSize = batchSize * inputDim;
-const size_t weightSize = outputDim * inputDim;
-const size_t biasSize = bias.size();
-const size_t outputSize = batchSize * outputDim;
+    const size_t inputSize = batchSize * inputDim;
+    const size_t weightSize = outputDim * inputDim;
+    const size_t biasSize = bias.size();
+    const size_t outputSize = batchSize * outputDim;
 
-std::vector<float> flatInput, flatWeights;
-flatInput.reserve(inputSize);
-flatWeights.reserve(weightSize);
-for (const auto &row : input) flatInput.insert(flatInput.end(), row.begin(), row.end());
-for (const auto &row : weights) flatWeights.insert(flatWeights.end(), row.begin(), row.end());
+    std::vector<float> flatInput, flatWeights;
+    flatInput.reserve(inputSize);
+    flatWeights.reserve(weightSize);
+    for (const auto &row : input)
+        flatInput.insert(flatInput.end(), row.begin(), row.end());
+    for (const auto &row : weights)
+        flatWeights.insert(flatWeights.end(), row.begin(), row.end());
 
-std::vector<float> flatBias = bias;
-std::vector<float> flatOutput(outputSize);
+    std::vector<float> flatBias = bias;
+    std::vector<float> flatOutput(outputSize);
 
-float *d_input, *d_weights, *d_bias, *d_output;
-cudaMallocAsync(&d_input, inputSize * sizeof(float), 0);
-cudaMallocAsync(&d_weights, weightSize * sizeof(float), 0);
-cudaMallocAsync(&d_bias, biasSize * sizeof(float), 0);
-cudaMallocAsync(&d_output, outputSize * sizeof(float), 0);
+    float *d_input, *d_weights, *d_bias, *d_output;
+    cudaMallocAsync(&d_input, inputSize * sizeof(float), 0);
+    cudaMallocAsync(&d_weights, weightSize * sizeof(float), 0);
+    cudaMallocAsync(&d_bias, biasSize * sizeof(float), 0);
+    cudaMallocAsync(&d_output, outputSize * sizeof(float), 0);
 
-cudaMemcpyAsync(d_input, flatInput.data(), inputSize * sizeof(float), cudaMemcpyHostToDevice, 0);
-cudaMemcpyAsync(d_weights, flatWeights.data(), weightSize * sizeof(float), cudaMemcpyHostToDevice, 0);
-cudaMemcpyAsync(d_bias, flatBias.data(), biasSize * sizeof(float), cudaMemcpyHostToDevice, 0);
+    cudaMemcpyAsync(d_input, flatInput.data(), inputSize * sizeof(float), cudaMemcpyHostToDevice, 0);
+    cudaMemcpyAsync(d_weights, flatWeights.data(), weightSize * sizeof(float), cudaMemcpyHostToDevice, 0);
+    cudaMemcpyAsync(d_bias, flatBias.data(), biasSize * sizeof(float), cudaMemcpyHostToDevice, 0);
 
-const float alpha = 1.0f;
-const float beta = 0.0f;
-cublasSgemm(
-handle,
-CUBLAS_OP_T, CUBLAS_OP_N,
-outputDim, batchSize, inputDim,
-&alpha,
-d_weights, inputDim,
-d_input, inputDim,
-&beta,
-d_output, outputDim);
+    const float alpha = 1.0f;
+    const float beta = 0.0f;
+    cublasSgemm(
+        handle,
+        CUBLAS_OP_T, CUBLAS_OP_N,
+        outputDim, batchSize, inputDim,
+        &alpha,
+        d_weights, inputDim,
+        d_input, inputDim,
+        &beta,
+        d_output, outputDim);
 
-dim3 threads(16, 16);
-dim3 blocks((outputDim + 15) / 16, (batchSize + 15) / 16);
-addBiasEfficient<<<blocks, threads>>>(d_output, d_bias, batchSize, outputDim);
+    dim3 threads(16, 16);
+    dim3 blocks((outputDim + 15) / 16, (batchSize + 15) / 16);
+    addBiasEfficient<<<blocks, threads>>>(d_output, d_bias, batchSize, outputDim);
 
-cudaMemcpyAsync(flatOutput.data(), d_output, outputSize * sizeof(float), cudaMemcpyDeviceToHost, 0);
-cudaStreamSynchronize(0);
+    cudaMemcpyAsync(flatOutput.data(), d_output, outputSize * sizeof(float), cudaMemcpyDeviceToHost, 0);
+    cudaStreamSynchronize(0);
 
-std::vector<std::vector<float>> output(batchSize);
-for (int i = 0; i < batchSize; ++i)
-output[i] = std::vector<float>(flatOutput.begin() + i * outputDim, flatOutput.begin() + (i + 1) * outputDim);
+    std::vector<std::vector<float>> output(batchSize);
+    for (int i = 0; i < batchSize; ++i)
+        output[i] = std::vector<float>(flatOutput.begin() + i * outputDim, flatOutput.begin() + (i + 1) * outputDim);
 
-cudaFreeAsync(d_input, 0);
-cudaFreeAsync(d_weights, 0);
-cudaFreeAsync(d_bias, 0);
-cudaFreeAsync(d_output, 0);
+    cudaFreeAsync(d_input, 0);
+    cudaFreeAsync(d_weights, 0);
+    cudaFreeAsync(d_bias, 0);
+    cudaFreeAsync(d_output, 0);
 
-return output;
+    return output;
 }
 
 //==============================
@@ -568,13 +568,12 @@ std::vector<std::vector<float>> computeDW(const std::vector<float> &x, const std
     return dW;
 }
 
-
 // High-performance warp-tiled Tensor Core kernel (16x16 blocks)
 __global__ void turboFusedTensorCore_half_kernel(
-    const __half* __restrict__ A,
-    const __half* __restrict__ B,
-    const __half* __restrict__ bias,
-    __half* __restrict__ output,
+    const __half *__restrict__ A,
+    const __half *__restrict__ B,
+    const __half *__restrict__ bias,
+    __half *__restrict__ output,
     int M, int K, int N)
 {
     // Each warp computes a 16x16 tile of C
@@ -584,7 +583,8 @@ __global__ void turboFusedTensorCore_half_kernel(
     int row = warpM * 16;
     int col = warpN * 16;
 
-    if (row >= M || col >= N) return;
+    if (row >= M || col >= N)
+        return;
 
     // Accumulator fragment (FP32)
     wmma::fragment<wmma::accumulator, 16, 16, 16, float> acc_frag;
@@ -609,8 +609,8 @@ __global__ void turboFusedTensorCore_half_kernel(
         }
     }
 
-    // Add bias and write result (coalesced, 1 warp stores 16x16 tile)
-    #pragma unroll
+// Add bias and write result (coalesced, 1 warp stores 16x16 tile)
+#pragma unroll
     for (int i = 0; i < acc_frag.num_elements; ++i)
     {
         int r = i / 16;
@@ -628,12 +628,11 @@ __global__ void turboFusedTensorCore_half_kernel(
     }
 }
 
-
 void fusedLinearSoftmaxTensorCore_half(
-    const __half* d_input,
-    const __half* d_weights,
-    const __half* d_bias,
-    __half* d_output,
+    const __half *d_input,
+    const __half *d_weights,
+    const __half *d_bias,
+    __half *d_output,
     int batchSize, int inputDim, int outputDim)
 {
     dim3 threads(32, 4); // 4 warps per block for higher occupancy

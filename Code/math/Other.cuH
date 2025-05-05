@@ -72,4 +72,3 @@ std::vector<std::vector<float>> computeDW(const std::vector<float> &x, const std
             dW[i][j] = x[i] * dZ[j];
     return dW;
 }
-

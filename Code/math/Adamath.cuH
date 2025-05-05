@@ -35,7 +35,7 @@ void softmaxCUDA_shared(const float *d_input, float *d_output, int batchSize, in
 std::vector<std::vector<float>> matmulCUDA(const std::vector<std::vector<float>> &A, const std::vector<std::vector<float>> &B);
 
 // TensorCore + Softmax fused kernel forward declaration
-void fusedLinearSoftmaxTensorCore_half(const __half* d_input, const __half* d_weights, const __half* d_bias, __half* d_probs, int batchSize, int inputDim, int outputDim);
+void fusedLinearSoftmaxTensorCore_half(const __half *d_input, const __half *d_weights, const __half *d_bias, __half *d_probs, int batchSize, int inputDim, int outputDim);
 
 //========================
 //     MATH FUNCTIONS
@@ -52,7 +52,6 @@ std::vector<float> softmax(const std::vector<float> &input);
 std::vector<std::vector<float>> softmaxBatch(const std::vector<std::vector<float>> &matrix);
 std::vector<std::vector<float>> softmaxCUDA_batch_half(const std::vector<std::vector<float>> &input, const std::vector<std::vector<float>> &weights, const std::vector<float> &bias);
 
-
 std::vector<__half> toHalfFlat(const std::vector<std::vector<float>> &matrix);
 
 float cross_entropy(const std::vector<float> &probs, int targetIndex);
@@ -63,4 +62,3 @@ std::vector<std::vector<float>> sigmoidDerivative(const std::vector<std::vector<
 std::vector<float> computeGradient(const std::vector<float> &probs, int targetId);
 std::vector<float> oneHot(int vocabSize, int index);
 std::vector<std::vector<float>> computeDW(const std::vector<float> &x, const std::vector<float> &dZ);
-
