@@ -6,6 +6,9 @@ using namespace nvcuda;
 //      SIGMOID MATH
 //==============================
 
+//====================================================================
+//  DO NOT USE THIS FOR LLMS, ONLY USE FOR SIMPLER NEURAL NETS IE RRNS
+//====================================================================
 std::vector<float> sigmoid(const std::vector<float> &z)
 {
     std::vector<float> output;

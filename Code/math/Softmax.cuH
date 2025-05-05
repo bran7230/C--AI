@@ -6,37 +6,37 @@ using namespace nvcuda;
 //      SOFTMAX
 //==============================
 
-//Base softmax function, only i batch of inputs.
+// Base softmax function, only i batch of inputs.
 std::vector<float> softmax(const std::vector<float> &input)
 {
-    //pre declare size for memory saving
+    // pre declare size for memory saving
     int size = input.size();
-    //make the output we return
+    // make the output we return
     std::vector<float> output(size);
-    //let the max value(safe for numbers)
+    // let the max value(safe for numbers)
     float maxVal = *std::max_element(input.begin(), input.end());
-    //save all the exponents for the softmax equations(1 / 1 + e^-z)
+    // save all the exponents for the softmax equations(1 / 1 + e^-z)
     std::vector<float> exps(size);
-    //loop thorugh the exponents, making sure to subtract the max value for number safety. 
+    // loop thorugh the exponents, making sure to subtract the max value for number safety.
     for (int i = 0; i < size; ++i)
         exps[i] = std::exp(input[i] - maxVal);
 
-    //make the sum
+    // make the sum
     float sum = std::accumulate(exps.begin(), exps.end(), 0.0f);
-    //loop through the final values, adding the products of the exponents/sum of exponents.
+    // loop through the final values, adding the products of the exponents/sum of exponents.
     for (int i = 0; i < size; ++i)
         output[i] = exps[i] / sum;
 
     return output;
 }
-//Batch version, parallel enabled for faster ops.
+// Batch version, parallel enabled for faster ops.
 std::vector<std::vector<float>> softmaxBatch(const std::vector<std::vector<float>> &matrix)
-{   //pre reserve for perfomance.
+{ // pre reserve for perfomance.
     int batchSize = matrix.size();
     std::vector<std::vector<float>> output(batchSize);
 #pragma omp parallel for
     for (int i = 0; i < batchSize; ++i)
-        //calling orginal softmax
+        // calling orginal softmax
         output[i] = softmax(matrix[i]);
     return output;
 }
@@ -46,7 +46,7 @@ __global__ void softmaxSharedKernel(const float *input, float *output, int numCo
     // Allocate shared memory per block to store one row of input
     extern __shared__ float rowData[];
     // Determine the current row and thread ID within the block
-    int row = blockIdx.x; // Each block processes one row of inputs
+    int row = blockIdx.x;  // Each block processes one row of inputs
     int tid = threadIdx.x; // Each thread processes one collum
 
     // Load the row's data into shared memory (each thread loads one element)
@@ -65,10 +65,10 @@ __global__ void softmaxSharedKernel(const float *input, float *output, int numCo
     float sum = 0.0f;
     for (int i = 0; i < numCols; ++i)
     {
-        rowData[i] = __expf(rowData[i] - maxVal);  // Exponentiate (stabilized)
-        sum += rowData[i];  // Accumulate sum
+        rowData[i] = __expf(rowData[i] - maxVal); // Exponentiate (stabilized)
+        sum += rowData[i];                        // Accumulate sum
     }
-    __syncthreads();  // Wait until all exponentials and sum are ready
+    __syncthreads(); // Wait until all exponentials and sum are ready
 
     // Normalize each value to compute softmax
     for (int i = 0; i < numCols; ++i)
@@ -78,7 +78,7 @@ __global__ void softmaxSharedKernel(const float *input, float *output, int numCo
 // Wrapper function to launch the softmaxSharedKernel for a batch of inputs
 void softmaxCUDA_shared(const float *d_input, float *d_output, int batchSize, int numCols)
 {
-     // Each block will handle one row (sample) in the batch
+    // Each block will handle one row (sample) in the batch
     dim3 grid(batchSize);
 
     // Each thread in a block handles one column in the row
@@ -89,7 +89,7 @@ void softmaxCUDA_shared(const float *d_input, float *d_output, int batchSize, in
 
     // Launch the kernel with shared memory to compute row-wise softmax
     softmaxSharedKernel<<<grid, block, sharedMemSize>>>(d_input, d_output, numCols);
-    
+
     // Synchronize to ensure the kernel finishes before continuing
     cudaDeviceSynchronize();
 }
@@ -99,9 +99,9 @@ std::vector<__half> toHalfFlat(const std::vector<std::vector<float>> &matrix)
 {
     int rows = matrix.size();
     int cols = matrix[0].size();
-     // Allocate flat __half vector of size rows * cols
+    // Allocate flat __half vector of size rows * cols
     std::vector<__half> flat(rows * cols);
-     // Flatten the matrix row by row, converting each float to half
+    // Flatten the matrix row by row, converting each float to half
     for (int i = 0; i < rows; ++i)
         for (int j = 0; j < cols; ++j)
             flat[i * cols + j] = __float2half(matrix[i][j]);
@@ -111,9 +111,9 @@ std::vector<__half> toHalfFlat(const std::vector<std::vector<float>> &matrix)
 // Converts a 1D float vector to a 1D __half vector
 std::vector<__half> toHalf1D(const std::vector<float> &vec)
 {
-     // Allocate __half vector with same size
+    // Allocate __half vector with same size
     std::vector<__half> halfVec(vec.size());
-     // Convert each float element to half-precision
+    // Convert each float element to half-precision
     for (size_t i = 0; i < vec.size(); ++i)
         halfVec[i] = __float2half(vec[i]);
     return halfVec;
@@ -123,21 +123,22 @@ std::vector<__half> toHalf1D(const std::vector<float> &vec)
 // Computes C = A × B + bias, where:
 // A: [M x K], B: [K x N], bias: [N], output: [M x N]
 __global__ void turboFusedTensorCore_half_kernel(
-    const __half* __restrict__ A,
-    const __half* __restrict__ B,
-    const __half* __restrict__ bias,
-    __half* __restrict__ output,
+    const __half *__restrict__ A,
+    const __half *__restrict__ B,
+    const __half *__restrict__ bias,
+    __half *__restrict__ output,
     int M, int K, int N)
 {
     // Each warp computes a 16x16 tile of C
     int warpM = blockIdx.y; // Tile row index
-    int warpN = blockIdx.x;  // Tile col index
+    int warpN = blockIdx.x; // Tile col index
 
     int row = warpM * 16;
     int col = warpN * 16;
 
-     // Early exit if out of bounds
-    if (row >= M || col >= N) return;
+    // Early exit if out of bounds
+    if (row >= M || col >= N)
+        return;
 
     // Accumulator fragment (FP32)
     wmma::fragment<wmma::accumulator, 16, 16, 16, float> acc_frag;
@@ -156,7 +157,7 @@ __global__ void turboFusedTensorCore_half_kernel(
             // Load 16x16 tile from A if in bounds (row-major layout)
             if (row + 15 < M && t + 15 < K)
                 wmma::load_matrix_sync(a_frag, A + row * K + t, K);
-             // Load 16x16 tile from B if in bounds (column-major layout)
+            // Load 16x16 tile from B if in bounds (column-major layout)
             if (t + 15 < K && col + 15 < N)
                 wmma::load_matrix_sync(b_frag, B + t * N + col, N);
 
@@ -165,12 +166,12 @@ __global__ void turboFusedTensorCore_half_kernel(
         }
     }
 
-    // Add bias and write result (coalesced, 1 warp stores 16x16 tile)
-    #pragma unroll
+// Add bias and write result (coalesced, 1 warp stores 16x16 tile)
+#pragma unroll
     for (int i = 0; i < acc_frag.num_elements; ++i)
     {
-        int r = i / 16;  // Local row inside tile
-        int c = i % 16;  // Local col inside tile
+        int r = i / 16; // Local row inside tile
+        int c = i % 16; // Local col inside tile
 
         int globalRow = row + r;
         int globalCol = col + c;
@@ -178,8 +179,8 @@ __global__ void turboFusedTensorCore_half_kernel(
         // Store result only if within bounds
         if (globalRow < M && globalCol < N)
         {
-            float val = acc_frag.x[i];  // FP32 accumulator result
-            val += __half2float(bias[globalCol]);  // Add bias (converted to FP32)
+            float val = acc_frag.x[i];                             // FP32 accumulator result
+            val += __half2float(bias[globalCol]);                  // Add bias (converted to FP32)
             output[globalRow * N + globalCol] = __float2half(val); // Store result as FP16
         }
     }
@@ -189,15 +190,15 @@ __global__ void turboFusedTensorCore_half_kernel(
 // Performs: output = softmax(A × B + bias)
 // Uses warp-tiled WMMA and FP16 math for speed
 void fusedLinearSoftmaxTensorCore_half(
-    const __half* d_input,  // [batchSize x inputDim] input activations (FP16)
-    const __half* d_weights, // [inputDim x outputDim] weight matrix (FP16)
-    const __half* d_bias,  // [outputDim] bias vector (FP16)
-    __half* d_output,  // [batchSize x outputDim] output buffer (FP16, softmax result)
+    const __half *d_input,   // [batchSize x inputDim] input activations (FP16)
+    const __half *d_weights, // [inputDim x outputDim] weight matrix (FP16)
+    const __half *d_bias,    // [outputDim] bias vector (FP16)
+    __half *d_output,        // [batchSize x outputDim] output buffer (FP16, softmax result)
     int batchSize, int inputDim, int outputDim)
 {
     // 32 threads per warp × 4 warps = 128 threads per block
     // Helps increase occupancy on large matrices
-    dim3 threads(32, 4); 
+    dim3 threads(32, 4);
 
     // Each block processes one 16×16 tile: (output = batchSize x outputDim)
     dim3 blocks((outputDim + 15) / 16, (batchSize + 15) / 16);
@@ -213,28 +214,28 @@ void fusedLinearSoftmaxTensorCore_half(
 // High-performance batched softmax computation using fused Tensor Core kernel (FP16 math)
 // Performs: result = softmax(input × weights + bias)
 std::vector<std::vector<float>> softmaxCUDA_batch_half(
-    const std::vector<std::vector<float>> &input,  // [batchSize x inputDim]
+    const std::vector<std::vector<float>> &input,   // [batchSize x inputDim]
     const std::vector<std::vector<float>> &weights, // [outputDim x inputDim] (transposed layout)
-    const std::vector<float> &bias)  // [outputDim]
+    const std::vector<float> &bias)                 // [outputDim]
 {
-    int batchSize = input.size();   // Number of input samples
-    int inputDim = input[0].size();  // Input feature size
-    int outputDim = weights.size();  // Output feature size
-    int totalOut = batchSize * outputDim;  // Total output elements
+    int batchSize = input.size();         // Number of input samples
+    int inputDim = input[0].size();       // Input feature size
+    int outputDim = weights.size();       // Output feature size
+    int totalOut = batchSize * outputDim; // Total output elements
 
-     // === Flatten and convert to FP16 ===
-    auto flatInput = toHalfFlat(input); // [batchSize x inputDim]
-    auto flatWeights = toHalfFlat(weights);  // [outputDim x inputDim]
-    auto flatBias = toHalf1D(bias);  // [outputDim]
+    // === Flatten and convert to FP16 ===
+    auto flatInput = toHalfFlat(input);     // [batchSize x inputDim]
+    auto flatWeights = toHalfFlat(weights); // [outputDim x inputDim]
+    auto flatBias = toHalf1D(bias);         // [outputDim]
 
-     // === Allocate device memory ===
+    // === Allocate device memory ===
     __half *d_input, *d_weights, *d_bias, *d_output;
     cudaMalloc(&d_input, flatInput.size() * sizeof(__half));
     cudaMalloc(&d_weights, flatWeights.size() * sizeof(__half));
     cudaMalloc(&d_bias, flatBias.size() * sizeof(__half));
     cudaMalloc(&d_output, totalOut * sizeof(__half));
 
-     // === Copy host => device ===
+    // === Copy host => device ===
     cudaMemcpy(d_input, flatInput.data(), flatInput.size() * sizeof(__half), cudaMemcpyHostToDevice);
     cudaMemcpy(d_weights, flatWeights.data(), flatWeights.size() * sizeof(__half), cudaMemcpyHostToDevice);
     cudaMemcpy(d_bias, flatBias.data(), flatBias.size() * sizeof(__half), cudaMemcpyHostToDevice);
@@ -260,7 +261,3 @@ std::vector<std::vector<float>> softmaxCUDA_batch_half(
 
     return result;
 }
-
-
-
-
