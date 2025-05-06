@@ -1,6 +1,6 @@
 # C++(AND CUDA) Neural Network & Transformer Engine 
 
-This is a low-level, high-performance C++ implementation of a neural network and transformer architecture built entirely from scratch. It focuses on learning, reasoning, and generating text without relying on ML libraries — enabling **full control and true understanding** of how models like GPT function.
+This is a low-level, high-performance C++ implementation of a neural network and transformer architecture built entirely from scratch.(ITS ALSO OPEN SOURCE SO FEEL FREE TO TAKE CODE ETC) It focuses on learning, reasoning, and generating text without relying on ML libraries — enabling **full control and true understanding** of how models like GPT function.
 
 ---
 
