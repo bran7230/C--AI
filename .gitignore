@@ -1,4 +1,4 @@
 # Ignore executable
-Ada.exe
+ada.exe
 ada.exp
 ada.lib
