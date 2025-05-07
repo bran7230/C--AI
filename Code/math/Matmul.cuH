@@ -13,7 +13,7 @@ std::vector<std::vector<float>> transpose(const std::vector<std::vector<float>> 
     int cols = matrix[0].size();
     std::vector<std::vector<float>> transposed(cols, std::vector<float>(rows));
 
-#pragma omp parallel for collapse(2)
+#pragma omp parallel for
     for (int i = 0; i < rows; ++i)
         for (int j = 0; j < cols; ++j)
             transposed[j][i] = matrix[i][j];
@@ -69,7 +69,7 @@ std::vector<std::vector<float>> matmul(const std::vector<std::vector<float>> &A,
     std::vector<std::vector<float>> output(aRows, std::vector<float>(bCols, 0.0f));
     // Parallelized nested loop over output matrix using OpenMP
     // Each thread computes one output cell using SIMD-optimized dot product
-#pragma omp parallel for collapse(2)
+#pragma omp parallel
     for (int i = 0; i < aRows; ++i)
         for (int j = 0; j < bCols; ++j)
             output[i][j] = dotSIMD(A[i], B_T[j]); // Compute dot product of row A[i] and column B[:,j]
