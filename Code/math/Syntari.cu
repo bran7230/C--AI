@@ -1,5 +1,5 @@
 // Code/math/Adamath.cu
-#include "Adamath.cuH"
+#include "Syntari.cuH"
 
 // Include CUDA implementation headers
 #include "Linear.cuH"

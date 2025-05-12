@@ -1,5 +1,5 @@
 #pragma once
-#include "Adamath.cuH"
+#include "Syntari.cuH"
 #include <mma.h>
 using namespace nvcuda;
 //============================
