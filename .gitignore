@@ -1,4 +1,4 @@
 # Ignore executable
-ada.exe
-ada.exp
-ada.lib
+syntari.exe
+syntari.exp
+syntari.lib
