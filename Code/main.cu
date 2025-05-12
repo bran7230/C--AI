@@ -12,7 +12,7 @@
 #include <cassert>
 // DONT USE .h in COMPILE COMMAND
 // USE THIS SINCE IM USING CUDA:  nvcc -O3 -arch=sm_70 -lcublas -Xcompiler "/openmp" -o syntari Code/main.cu Code/math/Syntari.cu
-// then ./ada to run 
+
 
 
 int main() {
