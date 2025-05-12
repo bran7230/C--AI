@@ -79,7 +79,7 @@ Batched fully on GPU without CPU bottlenecks.
 - Fully leverage **Tensor Core acceleration** for matmul
 - Optimize Transformer scaling for large batches
 - Eventually rewrite in raw **C** as the final optimization challenge
-- Use this foundation for "Ada" — a self-learning, reasoning AI assistant
+- Use this foundation for "Syntari" — a self-learning, reasoning AI assistant
 
 ---
 
@@ -95,11 +95,11 @@ Batched fully on GPU without CPU bottlenecks.
 ---
 ## CUDA Build
 ```bash
-nvcc -O3 -arch=sm_70 -lcublas -Xcompiler "/openmp" -o ada Code/main.cu Code/math/Adamath.cu
-./ada
+nvcc -O3 -arch=sm_70 -lcublas -Xcompiler "/openmp" -o syntari Code/main.cu Code/math/Syntari.cu
+./syntari
 ```
 ---
-## How to Build & Run
+## How to Build & Run(DEPRECIATED)
 
 For CPU build:
 ```bash
