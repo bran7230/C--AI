@@ -213,6 +213,7 @@ void fusedLinearSoftmaxTensorCore_half(
 }
 // High-performance batched softmax computation using fused Tensor Core kernel (FP16 math)
 // Performs: result = softmax(input × weights + bias)
+//Caller function DONT USE IN ACTUAL AI
 std::vector<std::vector<float>> softmaxCUDA_batch_half(
     const std::vector<std::vector<float>> &input,   // [batchSize x inputDim]
     const std::vector<std::vector<float>> &weights, // [outputDim x inputDim] (transposed layout)
