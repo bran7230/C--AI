@@ -242,7 +242,7 @@ std::vector<std::vector<float>> matmulCUDA(const std::vector<std::vector<float>>
 // TILE = 16 by default(FOR PERFOMANCE USE TILE = 32 INSTEAD OF 16)
 __global__ void matmul_shared_float4_kernel(const float *A, const float *B, float *C, int M, int K, int N)
 {
-    const int TILE = 16; // INCREASE TO 32 IF YOUR GPU CAN HANDLE IT
+    const int TILE = 32; // INCREASE TO 32 IF YOUR GPU CAN HANDLE IT
 
     // Declare shared memory tiles for a block of A and B
     __shared__ float tileA[TILE][TILE];
