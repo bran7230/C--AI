@@ -7,7 +7,7 @@ using namespace nvcuda;
 //==============================
 
 //====================================================================
-//  DO NOT USE THIS FOR LLMS, ONLY USE FOR SIMPLER NEURAL NETS IE RRNS
+//  DO NOT USE THIS FOR LLMS, ONLY USE FOR SIMPLER NEURAL NETS IE RNNS
 //====================================================================
 std::vector<float> sigmoid(const std::vector<float> &z)
 {
