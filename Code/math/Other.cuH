@@ -5,7 +5,7 @@ using namespace nvcuda;
 //============================
 //   LOSS / GRADIENT UTILS
 //============================
-
+//Miscelanions code....I dont use this for now.
 float cross_entropy(const std::vector<float> &probs, int targetIndex)
 {
     return -std::log(probs[targetIndex]);
